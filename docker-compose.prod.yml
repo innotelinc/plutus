@@ -5,7 +5,7 @@
 # Overrides:
 #   - ADMIN_SECRET set to a real secret (change before deploying)
 #   - Admin key check fails the deploy on mismatch (not warn-only)
-#   - All URLs use the production LAN IP (not localhost)
+#   - All URLs use the production LAN host (PLUTUS_HOST, not localhost)
 
 services:
   backend:
@@ -14,10 +14,10 @@ services:
 
   dashboard:
     environment:
-      - NEXT_PUBLIC_DEPLOYMENT_URL=http://192.168.1.10:${PORT:-3210}
+      - NEXT_PUBLIC_DEPLOYMENT_URL=${NEXT_PUBLIC_DEPLOYMENT_URL:-http://${PLUTUS_HOST:-127.0.0.1}:${PORT:-3210}}
 
   admin-key-check:
     environment:
-      # Do NOT set GLIZ_ADMIN_KEY_CHECK_WARN_ONLY in production — mismatches
+      # Do NOT set PLUTUS_ADMIN_KEY_CHECK_WARN_ONLY in production — mismatches
       # should block the deploy so stale credentials don't go live.
-      - GLIZ_ADMIN_KEY_CHECK_WARN_ONLY=
+      - PLUTUS_ADMIN_KEY_CHECK_WARN_ONLY=

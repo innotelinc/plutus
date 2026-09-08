@@ -173,7 +173,7 @@ function ChannelView({ data }: { data: ChannelData }) {
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3">
         <div className="flex items-baseline gap-3">
-          <span className="chrome-text text-2xl tracking-tight font-bold">PIXELSHOP</span>
+          <span className="chrome-text text-2xl tracking-tight font-bold">PLUTUS</span>
           <span className="hidden sm:inline font-mono text-[10px] tracking-[0.3em] text-cyan/80">
             THE AI SHOPPING NETWORK
           </span>
@@ -526,7 +526,7 @@ function Standby({
       <p className="text-2xl tracking-widest text-white font-bold">PLEASE STAND BY</p>
       <p className="font-mono text-xs text-zinc-500 text-center px-6">
         {offline
-          ? "PixelShop is currently offline — we'll be back soon."
+          ? "PLUTUS is currently offline — we'll be back soon."
           : loaded
           ? pendingCount > 0
             ? `${pendingCount} segment${pendingCount > 1 ? "s" : ""} in production at the AI studio…`
@@ -553,7 +553,7 @@ function Ticker({ rotation, pending }: { rotation: RotationItem[]; pending: Pend
     base.push(`${pending.length} NEW SEGMENT${pending.length > 1 ? "S" : ""} IN PRODUCTION`);
   }
 
-  const text = base.map((e) => `AS SEEN ON PIXELSHOP ▸ ${e}`).join("  ★  ") + "  ★  ";
+  const text = base.map((e) => `AS SEEN ON PLUTUS ▸ ${e}`).join("  ★  ") + "  ★  ";
 
   return (
     <div className="overflow-hidden rounded-xl border border-gold/30 bg-panel/70">
@@ -644,7 +644,7 @@ function SubmitBox({
     <div className="rounded-2xl border border-pink/30 bg-panel/70 p-4 backdrop-blur">
       <p className="font-bold text-sm tracking-wide text-gold">PUT YOUR PRODUCT ON TV</p>
       <p className="mt-1 text-xs text-zinc-500">
-        {offline ? "PixelShop is currently offline - we'll be back soon." : "Paste a product URL - our AI studio plans a full segment and airs it live."}
+        {offline ? "PLUTUS is currently offline - we'll be back soon." : "Paste a product URL - our AI studio plans a full segment and airs it live."}
       </p>
       <form onSubmit={handleSubmit} className="mt-3 flex flex-col gap-2">
         <input
@@ -957,13 +957,13 @@ function ChatPanel({ offline, chat }: { offline: boolean; chat: ChatMessage[] })
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("pixelshop-name");
+      const saved = localStorage.getItem("plutus-name");
       if (saved) {
         setName(saved);
       } else {
         const random = `Shopper${Math.floor(1000 + Math.random() * 9000)}`;
         setName(random);
-        localStorage.setItem("pixelshop-name", random);
+        localStorage.setItem("plutus-name", random);
       }
     } catch {
       const random = `Shopper${Math.floor(1000 + Math.random() * 9000)}`;
@@ -1031,7 +1031,7 @@ function ChatPanel({ offline, chat }: { offline: boolean; chat: ChatMessage[] })
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onBlur={() => { try { localStorage.setItem("pixelshop-name", name); } catch {} }}
+            onBlur={() => { try { localStorage.setItem("plutus-name", name); } catch {} }}
             maxLength={24}
             className="min-w-0 flex-1 rounded bg-transparent px-1 py-0.5 font-semibold outline-none focus:bg-black/30"
             style={{ color: userColor(name || "Shopper") }}

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PixelShop — The AI Shopping Network",
+  title: "PLUTUS — The AI Shopping Network",
   description: "A 24/7 AI-generated home shopping channel. Submit any product URL and watch it go live on air.",
 };
 
