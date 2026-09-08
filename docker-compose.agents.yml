@@ -1,0 +1,39 @@
+# Agent stack for PixelShop product scripting
+#
+# OmniRoute is the self-hosted, OpenAI-compatible gateway that the PixelShop
+# pipeline calls to write product scripts, and that OpenClaude + OpenClaw are
+# pointed at so interactive script-writing uses the same models.
+#
+#   docker compose -f docker-compose.agents.yml up -d
+#
+# Then connect a provider in the dashboard (http://localhost:20128):
+# Providers -> Add Provider (e.g. Anthropic/Claude, OpenAI, or a free one),
+# or run `omniroute` from the CLI instead of this container.
+#
+# OpenClaude (agent CLI — github.com/Gitlawb/openclaude) and OpenClaw
+# (assistant gateway — github.com/openclaw/openclaw) are host-side tools that
+# point at this same endpoint:
+#
+#   # OpenClaude -> OmniRoute (any model OmniRoute can reach)
+#   export OPENAI_BASE_URL=http://localhost:20128/v1
+#   export OPENAI_MODEL=auto            # or claude-sonnet-4-5, ...
+#   npx -y @gitlawb/openclaude          # start the scripting CLI
+#
+#   # OpenClaw -> OmniRoute (add as a model provider / api key in the
+#   # Control UI under Settings -> Models)
+#   openclaw gateway status
+
+services:
+  omniroute:
+    # Pin to a specific release for reproducible deploys:
+    # diegosouzapw/omniroute:X.Y.Z
+    image: diegosouzapw/omniroute:latest
+    container_name: omniroute
+    ports:
+      - "20128:20128"
+    volumes:
+      - omniroute-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  omniroute-data:
