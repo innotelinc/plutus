@@ -1,0 +1,30 @@
+#!/bin/sh
+# Commit-msg hook for plutus
+# Enforces conventional commit format.
+
+set -e
+
+COMMIT_MSG_FILE="$1"
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
+# Allow merge commits, revert commits, and chore/docs-style commits
+case "$COMMIT_MSG" in
+    "merge "*|"Merge "*|"revert "*|"Revert "*) exit 0 ;;
+esac
+
+# Check conventional commit format: type(scope): description
+if ! echo "$COMMIT_MSG" | grep -qE '^[a-z]+(\([a-z-]+\))?:[[:space:]]'; then
+    echo "ERROR: Commit message does not follow conventional commit format"
+    echo "Expected: type(scope): description"
+    echo "Examples:"
+    echo "  feat: add video pipeline"
+    echo "  fix(api): handle null response"
+    echo "  docs: update README"
+    echo "  chore: update dependencies"
+    echo ""
+    echo "Current message:"
+    echo "$COMMIT_MSG"
+    exit 1
+fi
+
+echo "Commit message check passed"
