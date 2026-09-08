@@ -97,8 +97,16 @@ jobs:
 
       - name: Install headless Chromium
         run: |
-          npx -y playwright-core@1.49.1 install chromium-headless-shell
-          echo "CHROME_PATH=$(find ~/.cache/ms-playwright -name chrome-headless-shell -type f | head -1)" >> "$GITHUB_ENV"
+          # Pin 1.62.0: newer builds (v1148+) moved the binary to
+          # chrome-linux/headless_shell AND dropped H.264 codecs, which the
+          # playback check needs for the demo MP4s. 1.62.0 ships build 1234
+          # (chrome-headless-shell-linux64/chrome-headless-shell).
+          npx -y playwright-core@1.62.0 install chromium-headless-shell
+          # Match both the classic and the v1148+ binary name/layout so a
+          # future playwright bump can't silently break CHROME_PATH again.
+          CHROME="$(find ~/.cache/ms-playwright -type f \( -name chrome-headless-shell -o -name headless_shell \) | head -1)"
+          echo "CHROME_PATH=$CHROME" >> "$GITHUB_ENV"
+          echo "resolved chrome: $CHROME"
 
       - name: Browser playback check
         run: timeout 120 node scripts/browser-check.mjs play http://127.0.0.1:3000

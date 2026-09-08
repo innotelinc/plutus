@@ -21,8 +21,11 @@ import fs from "node:fs";
 // chrome-headless-shell install locations, then PATH lookups.
 const CHROME_CANDIDATES = [
   process.env.CHROME_PATH,
+  // Classic headless-shell layout (playwright < 1.50).
   "/root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell",
   "/root/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell",
+  // v1148+ layout (playwright 1.49) — binary renamed to headless_shell.
+  "/root/.cache/ms-playwright/chromium_headless_shell-1148/chrome-linux/headless_shell",
   "/usr/lib/chromium/chrome-headless-shell",
   "chrome-headless-shell",
   "chromium",

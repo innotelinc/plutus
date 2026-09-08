@@ -1,3 +1,5 @@
+<div align="center">
+
 # 🛒 PLUTUS — Shop. Watch. Discover.
 
 **Self-hosted AI shopping channel (VideoOps): submit a product URL and watch an AI host present it in generated video clips — fully open-source, no external video APIs required.**
@@ -98,25 +100,30 @@ and installs dependencies.
 
 ### AI keys
 
-The pipeline uses OmniRoute for scripting and image generation. Configure via
-environment variables:
+The pipeline uses OmniRoute for scripting and image generation. PLUTUS uses the
+shared platform instance (`zeus`) on port `20128` — it is **not** part of the
+compose stack. Configure via environment variables (set on the backend with
+`npx convex env set`, so they land in the running backend's environment):
 
 ```bash
-# OmniRoute gateway URL (default: http://localhost:20128/v1)
-OMNIROUTE_BASE_URL=http://$(node scripts/lan-ip.mjs):20128/v1
+# OmniRoute gateway URL (LAN address — the backend container must reach it)
+npx convex env set OMNIROUTE_BASE_URL http://$(node scripts/lan-ip.mjs):20128/v1
+
+# API key for the shared instance (required — zeus authenticates requests)
+npx convex env set OMNIROUTE_API_KEY 'sk-...'
 
 # Model for scripting (default: "auto" — OmniRoute picks best provider)
-OMNIROUTE_MODEL=auto
+npx convex env set OMNIROUTE_MODEL auto
 
 # Model for image generation / keyframes (default: "auto")
-OMNIROUTE_IMAGE_MODEL=auto
-
-# Optional API key if your OmniRoute instance requires one
-OMNIROUTE_API_KEY=''
+npx convex env set OMNIROUTE_IMAGE_MODEL auto
 ```
 
-Connect a provider in the OmniRoute dashboard (`http://$PLUTUS_HOST:20128`)
-to enable scripting and image generation.
+The image model must support `/images/generations` and return actual image
+bytes (JPEG, PNG, or WebP — all are normalized to PNG before the ffmpeg pass).
+Providers are community-sourced and can be transiently unavailable (429s), so
+the pipeline retries each frame with backoff and falls back to procedural
+keyframes rather than failing the whole clip.
 
 ### Video pipeline
 
@@ -127,11 +134,13 @@ and animates them with ffmpeg (same approach, no external API needed).
 
 ## Status
 
-**Phase: v0.2 — studio.** The stack boots, the playback check passes, and
+**Phase: v0.3 — AI studio.** The stack boots, the playback check passes, and
 submissions air end-to-end (verified with the headless-browser checks: submit →
-scrape → script → fallback clips → scheduled → live). AI-generated keyframes
-require an OmniRoute image provider; without one the channel airs procedural
-fallback clips so the screen is never dead.
+scrape → script → T2I keyframes → ffmpeg → scheduled → live). AI keyframes run
+through the shared OmniRoute gateway and air as full 10-second clips; when a
+provider is unavailable the channel falls back to procedural keyframes so the
+screen is never dead. Demo playback is fully self-hosted (no external video
+hosts), and CI runs the browser playback check against the real compose stack.
 
 ## Repo layout
 
