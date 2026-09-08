@@ -160,13 +160,18 @@ export const generateFallbackClip = action({
     // ffmpeg 6.1+ removed minterpolate's mi_width/mi_height/me_thresh/format
     // options — resize with scale and set the pixel format on the encoder
     // instead (keeps output identical across ffmpeg versions).
+    // 3 keyframes at 1fps would span only 2s of input, so minterpolate
+    // produced ~1.1s clips while the schedule expects 10s. Feed the frames
+    // at 0.1fps (each frame ~3.3s apart) so the interpolation covers the
+    // full 10-second clip, then trim to exactly 10s with -t.
     execFileSync(FFMPEG_PATH, [
       "-y",
-      "-framerate", "1",
+      "-framerate", "0.1",
       "-i", `${tmpDir}/keyframe%02d.png`,
       "-vf", "scale=256:256:flags=bilinear,minterpolate=mi_mode=mci:me_mode=bidir:vsbmc=1:fps=10",
       "-c:v", "libx264",
       "-pix_fmt", "yuv420p",
+      "-t", "10",
       "-loglevel", "error",
       mp4Filename,
     ], { stdio: "pipe" });
@@ -200,28 +205,57 @@ export const generateOpenVideo = action({
     for (let i = 0; i < positions.length; i++) {
       const t2iPrompt = `${prompt} [Frame ${i + 1} of 3: ${positions[i]} of the scene]`;
       try {
-        const resp = await fetch(`${baseUrl}/images/generations`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ model: imageModel, prompt: t2iPrompt.slice(0, 1000), n: 1, size: "768x768" }),
-        });
-        if (!resp.ok) throw new Error(`Image gen ${i + 1}/3: ${resp.status}`);
+        // Image endpoints rate-limit hard (429), so retry each frame with
+        // backoff before giving up. 3 attempts × up to ~7s = ~21s worst case.
+        let resp: Response | undefined;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          resp = await fetch(`${baseUrl}/images/generations`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ model: imageModel, prompt: t2iPrompt.slice(0, 1000), n: 1, size: "768x768" }),
+          });
+          if (resp.ok || resp.status !== 429) break;
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        }
+        if (!resp || !resp.ok) throw new Error(`Image gen ${i + 1}/3: ${resp?.status}`);
 
         const data = (await resp.json()) as { data?: { url?: string; b64_json?: string }[] };
         const images = data?.data?.filter((d) => d !== null) ?? [];
         if (images.length === 0) throw new Error(`No image for keyframe ${i + 1}`);
 
         const img = images[0];
-        const pngPath = `${tmpDir}/keyframe${String(i).padStart(2, "0")}.png`;
+        // Save to a raw path first — providers return different formats
+        // (Gemini returns JPEG, others PNG/WebP). The image2 demuxer keyed
+        // on `keyframe%02d.png` requires real PNG bytes, so we normalize
+        // each frame with ffmpeg before the minterpolate pass.
+        const rawPath = `${tmpDir}/keyframe${String(i).padStart(2, "0")}.raw`;
         if (img.b64_json) {
-          fs.writeFileSync(pngPath, Buffer.from(img.b64_json, "base64"));
+          fs.writeFileSync(rawPath, Buffer.from(img.b64_json, "base64"));
         } else if (img.url) {
           const imgResp = await fetch(img.url);
           if (!imgResp.ok) throw new Error(`Download keyframe ${i + 1}`);
-          fs.writeFileSync(pngPath, Buffer.from(await imgResp.arrayBuffer()));
+          fs.writeFileSync(rawPath, Buffer.from(await imgResp.arrayBuffer()));
         } else {
           throw new Error(`Keyframe ${i + 1} missing data`);
         }
+
+        const pngPath = `${tmpDir}/keyframe${String(i).padStart(2, "0")}.png`;
+        try {
+          // Normalize to PNG AND a uniform size — providers return different
+          // dimensions per frame (e.g. 512², 768²), and the image2 demuxer
+          // drops the whole stream if dimensions change mid-sequence.
+          execFileSync(FFMPEG_PATH, [
+            "-y",
+            "-i", rawPath,
+            "-vf", "scale=768:768:flags=bilinear",
+            "-frames:v", "1",
+            pngPath,
+          ], { stdio: "pipe" });
+        } catch (e) {
+          console.error(`normalize frame ${i} failed:`, e);
+          throw e;
+        }
+        try { fs.unlinkSync(rawPath); } catch {}
         keyframes.push(pngPath);
       } catch (e) {
         for (const kf of keyframes) { try { fs.unlinkSync(kf); } catch {} }
@@ -231,18 +265,21 @@ export const generateOpenVideo = action({
 
     const mp4Filename = `/fallback-clips/${clipId}.mp4`;
     try {
-      // Same ffmpeg 6.1+ compatibility as the fallback path above.
+      // Same ffmpeg 6.1+ compatibility as the fallback path above, and the
+      // same 0.1fps input + -t 10 so the clip is a full 10 seconds.
       execFileSync(FFMPEG_PATH, [
         "-y",
-        "-framerate", "1",
+        "-framerate", "0.1",
         "-i", `${tmpDir}/keyframe%02d.png`,
         "-vf", "scale=320:320:flags=bilinear,minterpolate=mi_mode=mci:me_mode=bidir:vsbmc=1:fps=10",
         "-c:v", "libx264",
         "-pix_fmt", "yuv420p",
+        "-t", "10",
         "-loglevel", "error",
         mp4Filename,
       ], { stdio: "pipe" });
-    } catch {
+    } catch (e) {
+      console.error("minterpolate failed:", e);
       for (const kf of keyframes) { try { fs.unlinkSync(kf); } catch {} }
       throw new Error("Video interpolation failed");
     }
