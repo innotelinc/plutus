@@ -94,4 +94,16 @@ export default defineSchema({
     ),
     queueInClipId: v.optional(v.id("clips")),
   }).index("by_channel_created", ["channelId"]),
+
+  // ---- Viewers (SSO identity via Cerulean Authentik) ----
+  // Upserted from /auth/callback; lets the channel attribute chat and
+  // submissions to real accounts and gate admin features by group.
+  viewers: defineTable({
+    viewerId: v.string(),        // Authentik `sub`
+    name: v.string(),
+    email: v.optional(v.string()),
+    groups: v.array(v.string()),
+    isAdmin: v.boolean(),
+    lastSeenAt: v.number(),      // ms timestamp
+  }).index("by_viewerId", ["viewerId"]),
 });
