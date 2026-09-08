@@ -157,6 +157,23 @@
     .stat b { display: block; font-size: 1.35rem; font-variant-numeric: tabular-nums; }
     .stat span { color: var(--p-text-secondary); font-size: 13px; }
 
+    .release-note {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+      margin-top: 18px; padding: 12px 16px;
+      background: var(--p-bg-elevated);
+      border: 1px solid rgba(245, 181, 68, 0.35);
+      border-radius: var(--radius-md);
+      font-size: 13.5px; color: var(--p-text-secondary);
+    }
+    .release-note a { color: var(--p-accent-hover); text-decoration: underline; }
+    .release-chip {
+      flex: 0 0 auto;
+      display: inline-flex; align-items: center;
+      border: 1px solid rgba(245, 181, 68, 0.4); color: var(--p-accent-hover);
+      border-radius: 999px; padding: 3px 11px; font-size: 12px; font-weight: 600;
+      letter-spacing: 0.03em; text-transform: uppercase;
+    }
+
     section { padding: 64px 0; }
     section .section-sub { color: var(--p-text-secondary); margin: 0 0 32px; max-width: 620px; }
     .grid { display: grid; gap: 14px; }
@@ -262,7 +279,7 @@
   <main>
     <div class="hero" id="top">
       <div class="wrap hero-inner">
-        <p class="kicker"><span class="pulse" aria-hidden="true"></span> v0.3 · AI studio · live</p>
+        <p class="kicker"><span class="pulse" aria-hidden="true"></span> v0.3.1 · AI studio · live</p>
         <h1>Shopping, <span class="accent">auto-generated</span> in video.</h1>
         <p class="lede">
           PLUTUS — the AI Shopping Channel — is a self-hosted live shopping platform: a viewer
@@ -284,6 +301,12 @@
           <div class="stat"><b>0</b><span>external video APIs</span></div>
           <div class="stat"><b>5 services</b><span>one docker compose up</span></div>
         </div>
+        <p class="release-note">
+          <span class="release-chip">v0.3.1 · just shipped</span>
+          T2I keyframes air as full 10-second clips (JPEG/WebP frames normalized to PNG),
+          demo playback is fully self-hosted, and CI runs a real browser playback check.
+          <a href="https://github.com/innotelinc/plutus/releases/tag/v0.3.1">Release notes</a>
+        </p>
       </div>
     </div>
 
@@ -352,7 +375,7 @@
         <div class="road">
           <div class="mile"><b>v0.1 — demo</b><p>Self-hosted stack: playback core, seeded schedule, submission pipeline, static export on nginx.</p><span class="badge done">shipped</span></div>
           <div class="mile"><b>v0.2 — studio</b><p>PLUTUS rename, LAN-IP autodetection, ffmpeg 6.1 clip fixes, spec-correct fallback encoder, unit tests.</p><span class="badge done">shipped</span></div>
-          <div class="mile"><b>v0.3 — AI studio</b><p>Image provider wired through OmniRoute for T2I keyframes; scripted clips by default, procedural as fallback. Full 10s clips, self-hosted demo loop, CI e2e playback check.</p><span class="badge now">current</span></div>
+          <div class="mile"><b>v0.3 — AI studio</b><p>Image provider wired through OmniRoute for T2I keyframes; scripted clips by default, procedural as fallback. Full 10s clips, self-hosted demo loop, CI e2e playback check.</p><span class="badge done">v0.3.1 shipped</span></div>
           <div class="mile"><b>v0.4 — identity</b><p>Authentik SSO via Cerulean, viewer accounts, chat moderation, per-viewer submission quotas.</p><span class="badge planned">next</span></div>
           <div class="mile"><b>v1.0 — release</b><p>Hardening, docs, billing via Magnate for featured slots, public release artifacts.</p><span class="badge planned">later</span></div>
         </div>
