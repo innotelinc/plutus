@@ -1,12 +1,15 @@
-# ─── PixelShop self-hosted stack ────────────────────────────────────────────
+# ─── PLUTUS self-hosted stack ───────────────────────────────────────────────
 #
 #   docker compose up -d          # backend + dashboard + web
+#
+# The host address defaults to 127.0.0.1; set PLUTUS_HOST (or let the Makefile
+# autodetect it via scripts/lan-ip.mjs) so LAN devices can reach the stack.
 #
 # Services:
 #   backend   — self-hosted Convex backend (database + functions) on :3210
 #               (http actions/site proxy on :3211)
 #   dashboard — Convex dashboard on :6791
-#   web       — PixelShop frontend (Next.js static export) on :3000
+#   web       — PLUTUS frontend (Next.js static export) on :3000
 #
 # Infra based on the official self-hosted guide:
 #   https://github.com/get-convex/convex-backend/blob/main/self-hosted/README.md
@@ -22,7 +25,7 @@ services:
     build:
       context: .
       dockerfile: deploy/backend.Dockerfile
-    image: gliz-backend:latest
+    image: plutus-backend:latest
     stop_grace_period: 10s
     stop_signal: SIGINT
     ports:
@@ -47,15 +50,15 @@ services:
       - AWS_S3_FORCE_PATH_STYLE
       - AWS_SECRET_ACCESS_KEY
       - AWS_SESSION_TOKEN
-      - CONVEX_CLOUD_ORIGIN=${CONVEX_CLOUD_ORIGIN:-http://192.168.1.10:${PORT:-3210}}
+      - CONVEX_CLOUD_ORIGIN=${CONVEX_CLOUD_ORIGIN:-http://${PLUTUS_HOST:-127.0.0.1}:${PORT:-3210}}
       - CONVEX_RELEASE_VERSION_DEV
-      - CONVEX_SITE_ORIGIN=${CONVEX_SITE_ORIGIN:-http://192.168.1.10:${SITE_PROXY_PORT:-3211}}
+      - CONVEX_SITE_ORIGIN=${CONVEX_SITE_ORIGIN:-http://${PLUTUS_HOST:-127.0.0.1}:${SITE_PROXY_PORT:-3211}}
       - DATABASE_URL
       - DISABLE_BEACON
       - DISABLE_METRICS_ENDPOINT=${DISABLE_METRICS_ENDPOINT:-true}
       - DOCUMENT_RETENTION_DELAY=${DOCUMENT_RETENTION_DELAY:-172800}
       - DO_NOT_REQUIRE_SSL
-      - ADMIN_SECRET=${ADMIN_SECRET:-gliz-admin-secret-change-in-production}
+      - ADMIN_SECRET=${ADMIN_SECRET:-plutus-admin-secret-change-in-production}
       - HTTP_SERVER_TIMEOUT_SECONDS
       - INSTANCE_NAME
       - INSTANCE_SECRET
@@ -70,13 +73,11 @@ services:
       - S3_STORAGE_MODULES_BUCKET
       - S3_STORAGE_SEARCH_BUCKET
       - S3_STORAGE_SNAPSHOT_IMPORTS_BUCKET
-    # The pipeline action can reach the host's OmniRoute gateway through
-    # host.docker.internal (the default OMNIROUTE_BASE_URL=http://localhost:20128/v1
-    # would point at the container itself). Set the gateway URL per-deployment
-    # with `npx convex env set OMNIROUTE_BASE_URL http://host.docker.internal:20128/v1`
-    # (see README "AI keys").
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    # The pipeline action runs inside the backend container, so the default
+    # OMNIROUTE_BASE_URL=http://localhost:20128/v1 would point at the container
+    # itself. Point it at the host's LAN IP (autodetect with
+    # `node scripts/lan-ip.mjs`) per deployment:
+    #   npx convex env set OMNIROUTE_BASE_URL http://$(node scripts/lan-ip.mjs):20128/v1
     healthcheck:
       test: curl -f http://localhost:3210/version
       interval: 5s
@@ -89,7 +90,7 @@ services:
     ports:
       - "${DASHBOARD_PORT:-6791}:6791"
     environment:
-      - NEXT_PUBLIC_DEPLOYMENT_URL=${NEXT_PUBLIC_DEPLOYMENT_URL:-http://192.168.1.10:${PORT:-3210}}
+      - NEXT_PUBLIC_DEPLOYMENT_URL=${NEXT_PUBLIC_DEPLOYMENT_URL:-http://${PLUTUS_HOST:-127.0.0.1}:${PORT:-3210}}
       - NEXT_PUBLIC_LOAD_MONACO_INTERNALLY
     depends_on:
       backend:
@@ -97,7 +98,7 @@ services:
 
   admin-key-check:
     image: busybox
-    container_name: gliz-admin-key-check
+    container_name: plutus-admin-key-check
     user: "0"
     volumes:
       - ./deploy/check-admin-key.sh:/scripts/check-admin-key.sh:ro

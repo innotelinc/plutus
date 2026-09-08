@@ -1,0 +1,26 @@
+# Local demo verification overlay — use on hosts where the default ports
+# (3000/3210/3211) are already taken by other stacks.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+#
+# Ports: web :3100, backend :3310, site proxy :3311, dashboard :6792.
+# Build the static export with those URLs baked in first (see README).
+
+services:
+  backend:
+    ports: !override
+      - "3310:3210"
+      - "3311:3211"
+    environment:
+      - CONVEX_CLOUD_ORIGIN=http://127.0.0.1:3310
+      - CONVEX_SITE_ORIGIN=http://127.0.0.1:3311
+
+  dashboard:
+    ports: !override
+      - "127.0.0.1:6792:6791"
+    environment:
+      - NEXT_PUBLIC_DEPLOYMENT_URL=http://127.0.0.1:3310
+
+  web:
+    ports: !override
+      - "3100:80"

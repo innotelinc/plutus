@@ -1,11 +1,11 @@
-# ─── PixelShop self-hosted Convex backend (with ffmpeg) ──────────────────────
+# ─── PLUTUS self-hosted Convex backend (with ffmpeg) ─────────────────────
 #
 # Extends the official self-hosted backend image to add ffmpeg, which the
 # fallback clip generation action needs. Based on:
 #   https://github.com/get-convex/convex-backend/blob/main/self-hosted/README.md
 #
 # Build:
-#   docker build -f deploy/backend.Dockerfile -t gliz-backend:latest .
+#   docker build -f deploy/backend.Dockerfile -t plutus-backend:latest .
 #
 # Use in docker-compose.yml by replacing the backend image line with:
 #   build:

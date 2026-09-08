@@ -15,6 +15,9 @@ cd "$PROJECT_DIR"
 
 echo "→ Generating fresh admin key and pushing functions..."
 
+# Host address: PLUTUS_HOST env, else autodetected LAN IP, else 127.0.0.1.
+HOST_ADDR="${PLUTUS_HOST:-$(node scripts/lan-ip.mjs 2>/dev/null || echo 127.0.0.1)}"
+
 ADMIN_KEY=$(docker compose exec -T backend bash -c 'source ./read_credentials.sh && bash /convex/generate_admin_key.sh' 2>/dev/null | tr -d '[:space:]')
 
 if [ -z "$ADMIN_KEY" ]; then
@@ -32,7 +35,7 @@ else
   echo "CONVEX_SELF_HOSTED_ADMIN_KEY=$ADMIN_KEY" >> .env.local
 fi
 
-export CONVEX_SELF_HOSTED_URL="${CONVEX_SELF_HOSTED_URL:-http://192.168.1.10:3210}"
+export CONVEX_SELF_HOSTED_URL="${CONVEX_SELF_HOSTED_URL:-http://${HOST_ADDR}:3210}"
 export CONVEX_SELF_HOSTED_ADMIN_KEY="$ADMIN_KEY"
 
 echo "→ Pushing Convex functions..."

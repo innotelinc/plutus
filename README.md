@@ -31,15 +31,17 @@
 
 ## Services
 
-Primary domain: `plutus.innotel.us` (configure in `.env`)
+`PLUTUS_HOST` is the host's LAN IP — autodetect it with `node scripts/lan-ip.mjs`
+or set it explicitly in `.env`. Using the LAN IP lets other devices on your
+network reach the stack; `127.0.0.1` works for localhost-only access.
 
 | Service | URL | Backed by |
 |---------|-----|-----------|
-| Web UI | `http://192.168.1.10:3000` | Next.js static export (Nginx) |
-| Convex backend | `http://192.168.1.10:3210` | Self-hosted Convex |
-| Convex site proxy | `http://192.168.1.10:3211` | Convex HTTP actions |
-| Dashboard | `http://192.168.1.10:6791` | Convex dashboard |
-| OmniRoute (AI gateway) | `http://192.168.1.10:20128` | OmniRoute container |
+| Web UI | `http://$PLUTUS_HOST:3000` | Next.js static export (Nginx) |
+| Convex backend | `http://$PLUTUS_HOST:3210` | Self-hosted Convex |
+| Convex site proxy | `http://$PLUTUS_HOST:3211` | Convex HTTP actions |
+| Dashboard | `http://$PLUTUS_HOST:6791` | Convex dashboard |
+| OmniRoute (AI gateway) | `http://$PLUTUS_HOST:20128` | OmniRoute container |
 
 All services are containerized (Docker); see `docker-compose.yml`.
 
@@ -70,10 +72,11 @@ All services are containerized (Docker); see `docker-compose.yml`.
 ## Quick start
 
 ```bash
-cp .env.example .env        # edit: CONVEX_SELF_HOSTED_ADMIN_KEY
+cp .env.example .env        # edit: CONVEX_SELF_HOSTED_ADMIN_KEY, PLUTUS_HOST
+node scripts/lan-ip.mjs     # print the autodetected LAN IP (PLUTUS_HOST)
 ./scripts/get-admin-key.sh  # auto-fetch admin key from backend
 make push                   # push functions + seed demo data
-make build                  # build static export
+make build                  # build static export (LAN IP baked in)
 docker compose up -d        # start the stack
 ```
 
@@ -87,7 +90,7 @@ environment variables:
 
 ```bash
 # OmniRoute gateway URL (default: http://localhost:20128/v1)
-OMNIROUTE_BASE_URL=http://192.168.1.10:20128/v1
+OMNIROUTE_BASE_URL=http://$(node scripts/lan-ip.mjs):20128/v1
 
 # Model for scripting (default: "auto" — OmniRoute picks best provider)
 OMNIROUTE_MODEL=auto
@@ -99,7 +102,7 @@ OMNIROUTE_IMAGE_MODEL=auto
 OMNIROUTE_API_KEY=''
 ```
 
-Connect a provider in the OmniRoute dashboard (`http://192.168.1.10:20128`)
+Connect a provider in the OmniRoute dashboard (`http://$PLUTUS_HOST:20128`)
 to enable scripting and image generation.
 
 ### Video pipeline
