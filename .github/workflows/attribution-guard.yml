@@ -63,8 +63,17 @@ jobs:
 
           EXIT_CODE=0
 
+          # A brand-new ref (branch/tag creation) reports all-zeros as the
+          # base — there is no previous revision to diff against, and git
+          # treats 000..0..HEAD as an invalid range.
+          ZERO_SHA=0000000000000000000000000000000000000000
+          HAS_BASE=0
+          if [ -n "${BASE_SHA:-}" ] && [ "${BASE_SHA}" != "${HEAD_SHA:-}" ] && [ "${BASE_SHA}" != "${ZERO_SHA}" ]; then
+            HAS_BASE=1
+          fi
+
           # ── commit messages (push) ──────────────────────────────────────────
-          if [ "${BASE_SHA:-}" != "${HEAD_SHA:-}" ] && [ -n "${BASE_SHA:-}" ]; then
+          if [ "$HAS_BASE" = "1" ]; then
             git log --format='%H %s' "${BASE_SHA}..${HEAD_SHA}" | cut -d' ' -f2- | \
               while IFS= read -r msg; do
                 [ -z "$msg" ] && continue
@@ -91,7 +100,7 @@ jobs:
           fi
 
           # ── lines added to files ───────────────────────────────────────────
-          if [ -n "${BASE_SHA:-}" ] && [ -n "${HEAD_SHA:-}" ] && [ "${BASE_SHA:-}" != "${HEAD_SHA:-}" ]; then
+          if [ "$HAS_BASE" = "1" ]; then
             git diff --diff-filter=AM --unified=0 "${BASE_SHA}".."${HEAD_SHA}" | \
               grep '^+' | grep -v '^+++' | \
               while IFS= read -r line; do
