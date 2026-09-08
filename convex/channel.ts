@@ -283,14 +283,15 @@ export const sendChat = mutation({
   },
 });
 
-// ─── Seed mock data (P1 testing) ────────────────────────
+// ─── Seed mock data (P1 testing) ────────────────────────────────
 // Inserts 3 mock items with clips + schedule entries for playback testing.
-// Uses public sample MP4s (Big Buck Bunny / Sintel clips from Google storage).
+// Clips are self-hosted: branded MP4s under /demo/ (see scripts/make-demo-clips.sh),
+// served by nginx from the static export — no external video host involved.
 
 const MOCK_VIDEOS = [
-  { url: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_2MB.mp4", title: "Big Buck Bunny", price: "$19.99", dialogue: "Welcome to PLUTUS! Today's first feature — Big Buck Bunny, the classic animated short. A story of revenge and justice in the forest.", image: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Big_buck_bunny_poster_big.jpg" },
-  { url: "https://test-videos.co.uk/vids/jellyfish/mp4/h264/720/Jellyfish_720_10s_1MB.mp4", title: "Jellyfish Showcase", price: "$24.99", dialogue: "Our second feature — Jellyfish in crystal-clear 720p. A mesmerizing underwater showcase for the PLUTUS player.", image: undefined as string | undefined },
-  { url: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4", title: "Bunny Encore (360p)", price: "$9.99", dialogue: "And now, an encore presentation at 360p — a perfect demo of the PLUTUS player's smooth resolution transitions.", image: undefined as string | undefined },
+  { url: "/demo/demo-1.mp4", title: "Welcome to PLUTUS", price: "$19.99", dialogue: "Welcome to PLUTUS! Today's first feature is live from your own studio — shopping, auto-generated in video.", image: "/demo/demo-1.png" },
+  { url: "/demo/demo-2.mp4", title: "Studio Lights", price: "$24.99", dialogue: "Our second feature — every clip you see was generated on this very host, no cloud required.", image: "/demo/demo-2.png" },
+  { url: "/demo/demo-3.mp4", title: "Zero Cloud", price: "$9.99", dialogue: "And now, an encore presentation — zero external video APIs, fully self-hosted, always on air.", image: "/demo/demo-3.png" },
 ];
 
 export const seedMockData = mutation({
@@ -328,11 +329,12 @@ export const seedMockData = mutation({
     // Start schedule 5 seconds from now to allow client to load
     let scheduleStart = now + 5000;
     const itemIds: Id<"items">[] = [];
+    const clipIds: Id<"clips">[] = [];
 
+    // Create one item + clip per demo video (10s each)
     for (let i = 0; i < MOCK_VIDEOS.length; i++) {
       const mv = MOCK_VIDEOS[i];
 
-      // Create item
       const itemId = await ctx.db.insert("items", {
         channelId: channel!._id,
         url: mv.url,
@@ -346,7 +348,6 @@ export const seedMockData = mutation({
       });
       itemIds.push(itemId);
 
-      // Create one clip per item (10s each)
       const clipId = await ctx.db.insert("clips", {
         channelId: channel!._id,
         itemId,
@@ -358,17 +359,25 @@ export const seedMockData = mutation({
         retryCount: 0,
         clipIndex: 0,
       });
+      clipIds.push(clipId);
+    }
 
-      // Add to schedule
-      await ctx.db.insert("schedule", {
-        channelId: channel!._id,
-        itemId,
-        clipId,
-        startAt: scheduleStart,
-        durationMs: 10000,
-      });
-
-      scheduleStart += 10000; // next clip starts after this one
+    // Air the demo round-robin for a few cycles so the channel plays
+    // continuously instead of dropping to standby after the first 30s.
+    // The rotateSchedule cron keeps topping the schedule up afterwards,
+    // so the seeded loop is just the warm-up runway.
+    const LOOP_CYCLES = 4; // 4 × 3 clips × 10s = 2 minutes of airtime
+    for (let cycle = 0; cycle < LOOP_CYCLES; cycle++) {
+      for (let i = 0; i < MOCK_VIDEOS.length; i++) {
+        await ctx.db.insert("schedule", {
+          channelId: channel!._id,
+          itemId: itemIds[i],
+          clipId: clipIds[i],
+          startAt: scheduleStart,
+          durationMs: 10000,
+        });
+        scheduleStart += 10000; // next clip starts after this one
+      }
     }
 
     // Update channel

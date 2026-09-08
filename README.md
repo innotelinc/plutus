@@ -36,7 +36,7 @@
 - A URL-to-video pipeline: scrape → script → keyframes → ffmpeg → air, with a fallback at every AI-dependent step
 - A self-hosted Convex backend with a custom image that generates clips in-container via ffmpeg
 - A broadcast player: event-driven clip switching, subtitles bound to clips, product cards
-- A Docker Compose stack: backend, dashboard, web, optional OmniRoute AI gateway
+- A Docker Compose stack: backend, dashboard, web — with the platform's shared OmniRoute AI gateway
 
 ## Services
 
@@ -50,7 +50,7 @@ network reach the stack; `127.0.0.1` works for localhost-only access.
 | Convex backend | `http://$PLUTUS_HOST:3210` | Self-hosted Convex |
 | Convex site proxy | `http://$PLUTUS_HOST:3211` | Convex HTTP actions |
 | Dashboard | `http://$PLUTUS_HOST:6791` | Convex dashboard |
-| OmniRoute (AI gateway) | `http://$PLUTUS_HOST:20128` | OmniRoute container |
+| OmniRoute (AI gateway) | `http://$PLUTUS_HOST:20128` | Shared platform instance (zeus) |
 
 All services are containerized (Docker); see `docker-compose.yml`.
 
@@ -75,7 +75,7 @@ All services are containerized (Docker); see `docker-compose.yml`.
 - 🔓 Fully open-source: no external video APIs, no vendor lock-in
 - 🎥 T2I keyframes + ffmpeg minterpolate — smooth motion between 3 generated frames
 - 🤖 OmniRoute: 350+ AI providers for scripting and image generation
-- 🐳 Docker Compose stack: backend, dashboard, web, optional OmniRoute
+- 🐳 Docker Compose stack: backend, dashboard, web + shared OmniRoute
 - 🎞️ Custom backend image with ffmpeg for in-container clip generation
 
 ## Quick start
@@ -88,6 +88,10 @@ make push                   # push functions + seed demo data
 make build                  # build static export (LAN IP baked in)
 docker compose up -d        # start the stack
 ```
+
+Demo playback is fully self-hosted: the seeded schedule points at branded clips
+under `/demo/`, rendered by `scripts/make-demo-clips.sh` (checked into
+`public/demo/`) — no external video host required.
 
 `setup.sh` is idempotent: safe to re-run; it copies `.env.example` if needed
 and installs dependencies.
@@ -147,10 +151,10 @@ deploy/          Deployment config
 docker-compose.yml       Main stack (backend, dashboard, web)
 docker-compose.local.yml Port-offset overlay for busy shared hosts
 docker-compose.prod.yml  Production overlay
-docker-compose.agents.yml OmniRoute agent stack
 scripts/         Utility scripts
   lan-ip.mjs           LAN IP autodetection (PLUTUS_HOST)
   browser-check.mjs    Headless browser verification (play + submit tests)
+  make-demo-clips.sh   Render the self-hosted demo clips served at /demo/ (seed data)
   get-admin-key.sh     Auto-fetch admin key from backend
   push-and-seed.sh     Generate key + push + seed in one shot
 src/             Next.js frontend

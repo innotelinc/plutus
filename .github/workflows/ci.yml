@@ -48,3 +48,57 @@ jobs:
           # CI has no LAN; the build only needs well-formed URLs baked in.
           NEXT_PUBLIC_CONVEX_URL: http://127.0.0.1:3210
           NEXT_PUBLIC_CONVEX_SITE_URL: http://127.0.0.1:3211
+
+  e2e:
+    # Boots the full compose stack and verifies the broadcast player end-to-end
+    # against seeded (self-hosted) demo clips — no external services required.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.11
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build static export
+        run: bun run build
+        env:
+          # CI has no LAN; the build only needs well-formed URLs baked in.
+          NEXT_PUBLIC_CONVEX_URL: http://127.0.0.1:3210
+          NEXT_PUBLIC_CONVEX_SITE_URL: http://127.0.0.1:3211
+
+      - name: Prepare local env
+        # docker-compose.yml binds ./.env.local into the backend and the
+        # admin-key-check one-shot; it must exist before the stack starts.
+        run: cp .env.example .env.local
+
+      - name: Start compose stack
+        run: docker compose up -d
+
+      - name: Wait for backend
+        run: |
+          for i in $(seq 1 120); do
+            if curl -fs http://127.0.0.1:3210/version >/dev/null 2>&1; then
+              echo "backend ready after ${i}x2s"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "backend never became ready"
+          docker compose ps
+          exit 1
+
+      - name: Push functions + seed demo data
+        run: PLUTUS_HOST=127.0.0.1 ./scripts/get-admin-key.sh
+
+      - name: Install headless Chromium
+        run: |
+          npx -y playwright-core@1.49.1 install chromium-headless-shell
+          echo "CHROME_PATH=$(find ~/.cache/ms-playwright -name chrome-headless-shell -type f | head -1)" >> "$GITHUB_ENV"
+
+      - name: Browser playback check
+        run: timeout 120 node scripts/browser-check.mjs play http://127.0.0.1:3000
