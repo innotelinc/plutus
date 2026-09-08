@@ -121,6 +121,44 @@ export default function HomePage() {
   return <ChannelView data={channel} />;
 }
 
+// ─── Viewer session (SSO via Cerulean Authentik) ───────────────
+// /auth/* is proxied by nginx to the Convex site proxy, so the session
+// cookie is same-origin and /auth/me works from the static export.
+
+type Viewer = {
+  sub: string;
+  name: string;
+  email: string;
+  groups: string[];
+  isAdmin: boolean;
+};
+
+function useViewer(): { viewer: Viewer | null; loading: boolean } {
+  const [viewer, setViewer] = useState<Viewer | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch("/auth/me", { credentials: "same-origin" });
+        const data = await res.json();
+        if (!cancelled) setViewer(data?.user ?? null);
+      } catch {
+        if (!cancelled) setViewer(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return { viewer, loading };
+}
+
 // ─── Channel View ────────────────────────────────────────
 
 function ChannelView({ data }: { data: ChannelData }) {
@@ -128,6 +166,7 @@ function ChannelView({ data }: { data: ChannelData }) {
   const [selectedItem, setSelectedItem] = useState<RotationItem | null>(null);
   const [showSubmit, setShowSubmit] = useState(false);
   const [clipIndex, setClipIndex] = useState<number>(-1);
+  const { viewer, loading: viewerLoading } = useViewer();
 
   const skewRef = useRef(0);
   const [now, setNow] = useState(0);
@@ -179,6 +218,24 @@ function ChannelView({ data }: { data: ChannelData }) {
           </span>
         </div>
         <div className="flex items-center gap-2 font-mono text-xs sm:gap-4">
+          {viewerLoading ? null : viewer ? (
+            <>
+              <span className="hidden sm:inline text-cyan/90">{viewer.name}{viewer.isAdmin ? " · ADMIN" : ""}</span>
+              <a
+                href="/auth/logout"
+                className="rounded-md border border-pink/40 px-3 py-1.5 text-pink hover:bg-pink/10"
+              >
+                SIGN OUT
+              </a>
+            </>
+          ) : (
+            <a
+              href={`/auth/login?next=${encodeURIComponent("/")}`}
+              className="rounded-md border border-cyan/40 px-3 py-1.5 text-cyan hover:bg-cyan/10"
+            >
+              SIGN IN
+            </a>
+          )}
           <button
             onClick={() => setShowSubmit(true)}
             className="font-bold rounded-md bg-gradient-to-b from-gold to-[#b8860b] px-3 py-1.5 text-[11px] tracking-wide text-black hover:brightness-110"

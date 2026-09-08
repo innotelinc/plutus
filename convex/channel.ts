@@ -283,6 +283,39 @@ export const sendChat = mutation({
   },
 });
 
+// ─── Viewer identity (SSO via Cerulean Authentik) ────────────────
+// Called from the /auth/callback HTTP action to keep the viewers table in
+// sync with Authentik sessions. Idempotent per viewerId.
+
+export const upsertViewer = mutation({
+  args: {
+    viewerId: v.string(),
+    name: v.string(),
+    email: v.optional(v.string()),
+    groups: v.array(v.string()),
+    isAdmin: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("viewers")
+      .withIndex("by_viewerId", (q) => q.eq("viewerId", args.viewerId))
+      .first();
+    const fields = {
+      name: args.name,
+      email: args.email,
+      groups: args.groups,
+      isAdmin: args.isAdmin,
+      lastSeenAt: Date.now(),
+    };
+    if (existing) {
+      await ctx.db.patch(existing._id, fields);
+      return { viewerId: args.viewerId, upserted: false };
+    }
+    await ctx.db.insert("viewers", { viewerId: args.viewerId, ...fields });
+    return { viewerId: args.viewerId, upserted: true };
+  },
+});
+
 // ─── Seed mock data (P1 testing) ────────────────────────────────
 // Inserts 3 mock items with clips + schedule entries for playback testing.
 // Clips are self-hosted: branded MP4s under /demo/ (see scripts/make-demo-clips.sh),
