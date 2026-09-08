@@ -95,9 +95,11 @@
 
       <h2>Status</h2>
       <p>
-        <strong>v0.2 — studio.</strong> The stack boots, the playback check passes, and submissions air
-        end-to-end with procedural fallback clips. AI-generated keyframes require an OmniRoute image
-        provider (v0.3). See the <a href="https://github.com/innotelinc/plutus/releases">releases</a> for details.
+        <strong>v0.3 — AI studio.</strong> The stack boots, the playback check passes, and submissions air
+        end-to-end. AI-generated T2I keyframes run through the shared OmniRoute gateway (JPEG/WebP frames
+        normalized to PNG, animated by ffmpeg minterpolate into full 10-second clips), with procedural
+        fallback keeping the channel on air when a provider is unavailable. Demo playback is fully
+        self-hosted. See the <a href="https://github.com/innotelinc/plutus/releases">releases</a> for details.
       </p>
     </section>
   </main>
