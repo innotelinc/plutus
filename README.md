@@ -23,6 +23,9 @@
 > URLs and an AI host presents them in generated video clips. OmniRoute handles
 > scriptwriting and keyframe generation; ffmpeg animates between keyframes. No
 > external video APIs, no vendor lock-in, no cloud account required.
+>
+> **Landing page:** [innotelinc.github.io/plutus](https://innotelinc.github.io/plutus)
+> — the static project landing is published through GitHub Pages.
 
 ---
 
@@ -52,7 +55,8 @@ All services are containerized (Docker); see `docker-compose.yml`.
 - **Runtime:** every service is containerized (Docker); the backend uses a custom
   image (`deploy/backend.Dockerfile`) with ffmpeg for in-container clip generation.
 - **CI/CD:** GitHub Actions for lint, build, release, and GitHub Pages deployment
-  of the static export.
+  of the static export. The landing page is published to
+  [innotelinc.github.io/plutus](https://innotelinc.github.io/plutus).
 
 ## Key properties
 
