@@ -125,6 +125,54 @@ Providers are community-sourced and can be transiently unavailable (429s), so
 the pipeline retries each frame with backoff and falls back to procedural
 keyframes rather than failing the whole clip.
 
+### Sign-in (SSO via Cerulean Authentik)
+
+PLUTUS signs viewers in through the platform's shared Cerulean Authentik
+instance (OIDC authorization-code flow). Login is additive: without
+configuration the channel runs fully anonymously; with it, chat and
+submissions attribute to real accounts and admins get a badge.
+
+Provisioning creates the OIDC provider + application and writes the client
+credentials into `.env.local`:
+
+```bash
+python3 scripts/provision-authentik.py
+```
+
+The script needs `AUTHENTIK_ISSUER`, `AUTHENTIK_BOOTSTRAP_TOKEN` (and the
+bootstrap password for the admin-user step) in the environment or `.env` of
+the Cerulean project; it targets `http://127.0.0.1:9000` by default. It is
+idempotent — re-run it after changing `PUBLIC_URL` to update the registered
+redirect URI.
+
+Backend env (set with `npx convex env set`):
+
+```bash
+# Convex HTTP actions sign sessions with this (required once SSO is on)
+npx convex env set SESSION_SECRET '<random hex/urlsafe string>'
+
+# Cerulean Authentik (the app's public URL is used as the redirect URI)
+npx convex env set AUTHENTIK_ISSUER http://$(node scripts/lan-ip.mjs):9000
+npx convex env set AUTHENTIK_APP_SLUG plutus
+npx convex env set AUTHENTIK_CLIENT_ID '<from provision script>'
+npx convex env set AUTHENTIK_CLIENT_SECRET '<from provision script>'
+npx convex env set AUTHENTIK_ADMIN_GROUP plutus-admins
+
+# The origin viewers reach the app at (cookie + redirect URI base)
+npx convex env set PUBLIC_URL http://$(node scripts/lan-ip.mjs):3000
+```
+
+`PUBLIC_URL` must match the app origin in the browser — the session cookie is
+set on it, so sign-in works over plain HTTP on the LAN (`SameSite=Lax`).
+Authentik resolves on the LAN at `http://<lan-ip>:9000` (Cerulean's
+`--profile authentik`). The signed-in identity is stored in the `viewers`
+table and surfaced in the header (name + `· ADMIN` badge for members of the
+admin group); sessions are stateless HMAC-signed cookies, valid 7 days.
+
+`scripts/browser-auth-ux-check.mjs` drives a real headless browser through
+the full SSO flow (login form → callback → cookie → `/auth/me`) and fails
+loudly if anything breaks.
+
 ### Video pipeline
 
 The pipeline generates 3 keyframes per clip via an image model through OmniRoute,
@@ -134,13 +182,19 @@ and animates them with ffmpeg (same approach, no external API needed).
 
 ## Status
 
-**Phase: v0.3 — AI studio.** The stack boots, the playback check passes, and
+**Phase: v0.4 — Identity.** The stack boots, the playback check passes, and
 submissions air end-to-end (verified with the headless-browser checks: submit →
 scrape → script → T2I keyframes → ffmpeg → scheduled → live). AI keyframes run
 through the shared OmniRoute gateway and air as full 10-second clips; when a
 provider is unavailable the channel falls back to procedural keyframes so the
 screen is never dead. Demo playback is fully self-hosted (no external video
 hosts), and CI runs the browser playback check against the real compose stack.
+
+Sign-in now works end-to-end through the shared Cerulean Authentik instance
+(v0.4): SSO login → signed `plutus_session` cookie → `/auth/me`, with the
+viewer persisted to the `viewers` table and an `ADMIN` badge for members of
+the `plutus-admins` group. Verified with `scripts/browser-auth-ux-check.mjs`
+in a real headless browser (form → callback → cookie → identity).
 
 ## Repo layout
 

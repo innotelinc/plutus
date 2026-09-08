@@ -83,7 +83,7 @@
             <tr><td>Cerulean (Trust)</td><td>DNS and TLS for <code>plutus.innotel.us</code></td></tr>
             <tr><td>NPM Edge</td><td>Public routing for the app and dashboard hosts</td></tr>
             <tr><td>Infisical (Secrets)</td><td>Production credentials (OmniRoute keys, admin secret)</td></tr>
-            <tr><td>Authentik (Identity)</td><td>Optional viewer SSO — planned for v0.4</td></tr>
+            <tr><td>Authentik (Identity)</td><td>Viewer SSO via the shared Cerulean instance — live in v0.4</td></tr>
           </tbody>
         </table>
       </div>
@@ -95,12 +95,15 @@
 
       <h2>Status</h2>
       <p>
-        <strong>v0.3.1 — AI studio.</strong> The stack boots, the playback check passes, and submissions air
+        <strong>v0.4 — identity.</strong> The stack boots, the playback check passes, and submissions air
         end-to-end. AI-generated T2I keyframes run through the shared OmniRoute gateway (JPEG/WebP frames
         normalized to PNG, animated by ffmpeg minterpolate into full 10-second clips), with procedural
         fallback keeping the channel on air when a provider is unavailable. Demo playback is fully
         self-hosted, and CI runs a real browser playback check against the compose stack.
-        <a href="https://github.com/innotelinc/plutus/releases/tag/v0.3.1">v0.3.1 release notes</a>.
+        Sign-in works end-to-end through the shared Cerulean Authentik (v0.4): SSO login → signed
+        session cookie → /auth/me, viewer accounts in the viewers table, and an ADMIN badge for the
+        plutus-admins group.
+        <a href="https://github.com/innotelinc/plutus/releases/tag/v0.4.0">v0.4.0 release notes</a>.
         See the <a href="https://github.com/innotelinc/plutus/releases">releases</a> for details.
       </p>
     </section>

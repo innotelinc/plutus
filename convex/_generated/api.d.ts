@@ -10,6 +10,7 @@
 
 import type * as channel from "../channel.js";
 import type * as crons from "../crons.js";
+import type * as http from "../http.js";
 import type * as pipeline from "../pipeline.js";
 import type * as videoAction from "../videoAction.js";
 
@@ -22,6 +23,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   channel: typeof channel;
   crons: typeof crons;
+  http: typeof http;
   pipeline: typeof pipeline;
   videoAction: typeof videoAction;
 }>;
