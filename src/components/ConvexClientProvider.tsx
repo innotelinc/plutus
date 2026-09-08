@@ -14,7 +14,7 @@ const SITE_URL =
 // Inline the client so the site URL is accessible without polluting the global scope.
 // The Convex backend exposes HTTP actions / the site proxy on SITE_URL.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-;(globalThis as any).PIXELSHOP_SITE_URL = SITE_URL;
+;(globalThis as any).PLUTUS_SITE_URL = SITE_URL;
 const convex = new ConvexReactClient(CONVEX_URL);
 
 export function ConvexClientProvider({ children }: { children: ReactNode }) {

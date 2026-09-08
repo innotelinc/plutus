@@ -174,7 +174,7 @@ interface ScriptClip {
   dialogue: string;
 }
 
-const SYSTEM_PROMPT = `You are the scriptwriter for PixelShop, an AI shopping channel where an AI host presents products in generated video clips. Each clip is 10 seconds. You will receive product information and write 3 consecutive clips that form a complete product presentation.
+const SYSTEM_PROMPT = `You are the scriptwriter for PLUTUS, an AI shopping channel where an AI host presents products in generated video clips. Each clip is 10 seconds. You will receive product information and write 3 consecutive clips that form a complete product presentation.
 
 Each clip has:
 - videoPrompt: A visual description for the AI video model. Describe what the camera sees: the setting, the product, the host's actions. Include the spoken line in double quotes using this format: The host says, "line here" and continues without another word. Keep the full prompt under 420 characters. End with: Sound: ambient studio audio; the only spoken words are the exact quoted line, delivered clearly in English; all other voices are wordless.
@@ -190,8 +190,8 @@ Return ONLY a JSON object with a "clips" array, no markdown fences:
 
 const FALLBACK_CLIPS: ScriptClip[] = [
   {
-    videoPrompt: `A bright modern TV shopping studio with colorful lights. A charismatic host stands next to a product on a pedestal and gestures toward it with excitement. The host says, "Welcome to PixelShop! Today we have something amazing for you." and continues without another word. Sound: ambient studio audio; the only spoken words are the exact quoted line, delivered clearly in English; all other voices are wordless.`,
-    dialogue: "Welcome to PixelShop! Today we have something amazing for you.",
+    videoPrompt: `A bright modern TV shopping studio with colorful lights. A charismatic host stands next to a product on a pedestal and gestures toward it with excitement. The host says, "Welcome to PLUTUS! Today we have something amazing for you." and continues without another word. Sound: ambient studio audio; the only spoken words are the exact quoted line, delivered clearly in English; all other voices are wordless.`,
+    dialogue: "Welcome to PLUTUS! Today we have something amazing for you.",
   },
   {
     videoPrompt: `Close-up of a product on a pedestal in a bright TV shopping studio. A host gestures toward the product features with enthusiasm. The host says, "Look at this incredible design and quality." and continues without another word. Sound: ambient studio audio; the only spoken words are the exact quoted line, delivered clearly in English; all other voices are wordless.`,

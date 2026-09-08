@@ -25,8 +25,10 @@ jobs:
       - name: Build
         run: bun run build
         env:
-          NEXT_PUBLIC_CONVEX_URL: http://192.168.1.10:3210
-          NEXT_PUBLIC_CONVEX_SITE_URL: http://192.168.1.10:3211
+          # Release builds only need well-formed URLs baked in; deployments
+          # rebuild with their own PLUTUS_HOST (see README).
+          NEXT_PUBLIC_CONVEX_URL: http://127.0.0.1:3210
+          NEXT_PUBLIC_CONVEX_SITE_URL: http://127.0.0.1:3211
 
       - name: Package static export
         run: |

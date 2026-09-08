@@ -1,23 +1,68 @@
-// PixelShop browser verification (no dependencies — drives chrome-headless-shell
+// PLUTUS browser verification (no dependencies — drives chrome-headless-shell
 // directly over the Chrome DevTools Protocol using Node's built-in fetch/WebSocket).
 //
 // Modes:
-//   node scripts/browser-check.mjs play                  verify demo clips play end-to-end
+//   node scripts/browser-check.mjs play [app-url]        verify demo clips play end-to-end
 //   node scripts/browser-check.mjs submit <product-url>  submit a product, watch the pipeline
 //
 // Env:
-//   CHROME_PATH      override the chrome-headless-shell binary
-//   PIXELSHOP_URL    override the app URL (default http://127.0.0.1:3000/)
+//   CHROME_PATH   override the chrome-headless-shell binary
+//   PLUTUS_URL    override the app URL (default http://127.0.0.1:3000/)
+//
+// In "play" mode an optional app-url argument overrides PLUTUS_URL; in
+// "submit" mode the argument is the product URL to submit.
 //
 // Exits non-zero when the check fails, so it can be used in CI.
 
 import { spawn } from "node:child_process";
+import fs from "node:fs";
 
-const CHROME =
-  process.env.CHROME_PATH ||
-  "/root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell";
-const PORT = 9222;
-const URL = process.env.PIXELSHOP_URL || "http://127.0.0.1:3000/";
+// Chrome binary candidates: explicit override first, then common
+// chrome-headless-shell install locations, then PATH lookups.
+const CHROME_CANDIDATES = [
+  process.env.CHROME_PATH,
+  "/root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell",
+  "/root/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell",
+  "/usr/lib/chromium/chrome-headless-shell",
+  "chrome-headless-shell",
+  "chromium",
+  "google-chrome",
+].filter(Boolean);
+
+function findChrome() {
+  for (const candidate of CHROME_CANDIDATES) {
+    if (candidate.includes("/")) {
+      if (fs.existsSync(candidate)) return candidate;
+    } else {
+      // Bare name — let spawn resolve it via PATH when first used.
+      return candidate;
+    }
+  }
+  throw new Error(
+    "No Chrome/Chromium binary found. Install chrome-headless-shell or set CHROME_PATH.",
+  );
+}
+
+const CHROME = findChrome();
+
+// First free debug port starting at 9222 (shared hosts may hold the default).
+async function pickPort(start) {
+  for (let port = start; port < start + 10; port++) {
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/json/version`, {
+        signal: AbortSignal.timeout(300),
+      });
+      if (res.ok) continue; // already occupied by another DevTools instance
+    } catch {
+      return port; // nothing listening — free
+    }
+  }
+  throw new Error(`No free debug port in range ${start}..${start + 9}`);
+}
+
+const PORT = await pickPort(9222);
+const URL = process.env.PLUTUS_URL || "http://127.0.0.1:3000/";
+const USER_DATA_DIR = fs.mkdtempSync("/tmp/chrome-plutus-check-");
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -33,7 +78,7 @@ function spawnChrome() {
       "--autoplay-policy=no-user-gesture-required",
       "--mute-audio",
       `--remote-debugging-port=${PORT}`,
-      "--user-data-dir=/tmp/chrome-pixelshop-check",
+      `--user-data-dir=${USER_DATA_DIR}`,
       "about:blank",
     ],
     { stdio: "ignore" },
@@ -106,12 +151,18 @@ async function connect() {
       ws.send(JSON.stringify({ id, method, params }));
     });
 
+  // Bounded evaluate: a stalled/dead DevTools connection must surface as a
+  // failed sample, not hang the whole check (CI safety).
   const evalJs = async (expression) => {
-    const res = await send("Runtime.evaluate", {
-      expression,
-      returnByValue: true,
-      awaitPromise: true,
-    });
+    const res = await Promise.race([
+      send("Runtime.evaluate", {
+        expression,
+        returnByValue: true,
+        awaitPromise: true,
+      }),
+      sleep(15000).then(() => null),
+    ]);
+    if (!res) return { evalError: "evaluate timed out (devtools connection stalled?)" };
     if (res.exceptionDetails) return { evalError: res.exceptionDetails.text };
     return res.result?.value;
   };
@@ -170,9 +221,9 @@ const SAMPLE_SUBMIT_JS = `(() => {
   };
 })()`;
 
-async function runPlayback(c, durationSec = 48) {
-  console.log(`[play] verifying demo playback on ${URL} for ${durationSec}s`);
-  await c.send("Page.navigate", { url: URL });
+async function runPlayback(c, appUrl, durationSec = 48) {
+  console.log(`[play] verifying demo playback on ${appUrl} for ${durationSec}s`);
+  await c.send("Page.navigate", { url: appUrl });
 
   const samples = [];
   const start = Date.now();
@@ -221,8 +272,8 @@ async function runPlayback(c, durationSec = 48) {
   return fail;
 }
 
-async function runSubmit(c, productUrl, durationSec = 120) {
-  console.log(`[submit] submitting ${productUrl} on ${URL} (up to ${durationSec}s)`);
+async function runSubmit(c, productUrl, appUrl, durationSec = 120) {
+  console.log(`[submit] submitting ${productUrl} on ${appUrl} (up to ${durationSec}s)`);
   // Desktop viewport so the sidebar SubmitBox is visible
   await c.send("Emulation.setDeviceMetricsOverride", {
     width: 1440,
@@ -230,7 +281,7 @@ async function runSubmit(c, productUrl, durationSec = 120) {
     deviceScaleFactor: 1,
     mobile: false,
   });
-  await c.send("Page.navigate", { url: URL });
+  await c.send("Page.navigate", { url: appUrl });
 
   // Wait for the submit box, then fill + submit
   let filled = null;
@@ -298,12 +349,17 @@ async function main() {
     process.exit(2);
   }
 
+  // "play" mode: optional argv URL overrides PLUTUS_URL; "submit" mode:
+  // argv is the product URL, app URL comes from PLUTUS_URL / the default.
+  const appUrl = mode === "play" && arg ? arg : URL;
+
   const proc = spawnChrome();
   try {
     await waitForDevtools();
     const c = await connect();
 
-    const fail = mode === "submit" ? await runSubmit(c, arg) : await runPlayback(c);
+    const fail =
+      mode === "submit" ? await runSubmit(c, arg, appUrl) : await runPlayback(c, appUrl);
 
     console.log("\nconsole errors:", c.consoleErrors.length ? c.consoleErrors : "none");
     console.log(
@@ -328,6 +384,7 @@ async function main() {
     c.ws.close();
   } finally {
     proc.kill("SIGKILL");
+    try { fs.rmSync(USER_DATA_DIR, { recursive: true, force: true }); } catch {}
   }
 }
 

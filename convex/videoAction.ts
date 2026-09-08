@@ -25,7 +25,7 @@ const FALLBACK_HEIGHT = 320;
 const FALLBACK_KEYFRAMES = 3;
 
 function generateKeyframe(width: number, height: number, idx: number): Buffer {
-  const rawData = new Uint8Array(width * height * 4);
+  const pixels = new Uint8Array(width * height * 4);
   const t = idx / (FALLBACK_KEYFRAMES - 1);
   const phase = t * 2 * Math.PI;
 
@@ -36,10 +36,10 @@ function generateKeyframe(width: number, height: number, idx: number): Buffer {
       const gx = (nx + 0.3 * Math.sin(phase)) % 1;
       const gy = (ny + 0.2 * Math.cos(phase * 0.7)) % 1;
       const idx2 = Math.floor((gx * 0.6 + gy * 0.4) * 255) % 256;
-      rawData[(y * width + x) * 4] = idx2;
-      rawData[(y * width + x) * 4 + 1] = (idx2 * 2) % 256;
-      rawData[(y * width + x) * 4 + 2] = (idx2 * 3) % 256;
-      rawData[(y * width + x) * 4 + 3] = 255;
+      pixels[(y * width + x) * 4] = idx2;
+      pixels[(y * width + x) * 4 + 1] = (idx2 * 2) % 256;
+      pixels[(y * width + x) * 4 + 2] = (idx2 * 3) % 256;
+      pixels[(y * width + x) * 4 + 3] = 255;
     }
   }
 
@@ -55,9 +55,9 @@ function generateKeyframe(width: number, height: number, idx: number): Buffer {
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < radius) {
         const ring = Math.floor((dist / radius) * 255) % 256;
-        rawData[(y * width + x) * 4] = 255;
-        rawData[(y * width + x) * 4 + 1] = ring;
-        rawData[(y * width + x) * 4 + 2] = 100;
+        pixels[(y * width + x) * 4] = 255;
+        pixels[(y * width + x) * 4 + 1] = ring;
+        pixels[(y * width + x) * 4 + 2] = 100;
       }
     }
   }
@@ -71,9 +71,9 @@ function generateKeyframe(width: number, height: number, idx: number): Buffer {
         const dist = Math.sqrt((x - hx) ** 2 + (y - hy) ** 2);
         if (dist < 15) {
           const wave = 128 + 64 * Math.sin(t * 4 * Math.PI + x * 0.1 + y * 0.1);
-          rawData[(y * width + x) * 4] = 200;
-          rawData[(y * width + x) * 4 + 1] = wave;
-          rawData[(y * width + x) * 4 + 2] = 150;
+          pixels[(y * width + x) * 4] = 200;
+          pixels[(y * width + x) * 4 + 1] = wave;
+          pixels[(y * width + x) * 4 + 2] = 150;
         }
       }
     }
@@ -104,15 +104,31 @@ function generateKeyframe(width: number, height: number, idx: number): Buffer {
   ihdrData[10] = 0;
   ihdrData[11] = 0;
   ihdrData[12] = 0;
-  const ihdrCrc = crc32(ihdrData);
-  const ihdr = Buffer.alloc(21);
+  // IHDR chunk: 4-byte length + "IHDR" + 13 data bytes + 4-byte CRC = 25.
+  // Per the PNG spec the CRC covers chunk type + chunk data.
+  const IHDR_TYPE = Buffer.from([0x49, 0x48, 0x44, 0x52]);
+  const IDAT_TYPE = Buffer.from([0x49, 0x44, 0x41, 0x54]);
+  const ihdrCrc = crc32(Buffer.concat([IHDR_TYPE, ihdrData]));
+  const ihdr = Buffer.alloc(25);
   ihdr.writeUInt32BE(ihdrData.length, 0);
-  ihdr.writeUInt32BE(0x49484452, 4);
+  IHDR_TYPE.copy(ihdr, 4);
   ihdrData.copy(ihdr, 8);
-  ihdr.writeUInt32BE(ihdrCrc, 19);
+  ihdr.writeUInt32BE(ihdrCrc, 21);
+
+  // PNG raw data: every scanline is prefixed with a filter byte
+  // (0 = None). Skipping them corrupts the image data stream.
+  const stride = width * 4 + 1;
+  const rawData = new Uint8Array(stride * height);
+  for (let y = 0; y < height; y++) {
+    rawData[y * stride] = 0;
+    rawData.set(
+      pixels.subarray(y * width * 4, (y + 1) * width * 4),
+      y * stride + 1,
+    );
+  }
 
   const compressed = zlib.deflateSync(rawData, { level: 9 });
-  const idatCrc = crc32(compressed);
+  const idatCrc = crc32(Buffer.concat([IDAT_TYPE, compressed]));
   const idat = Buffer.alloc(4 + 4 + compressed.length + 4);
   idat.writeUInt32BE(compressed.length, 0);
   idat.writeUInt32BE(0x49444154, 4);
@@ -140,11 +156,14 @@ export const generateFallbackClip = action({
     }
 
     const mp4Filename = `/fallback-clips/${clipId}.mp4`;
+    // ffmpeg 6.1+ removed minterpolate's mi_width/mi_height/me_thresh/format
+    // options — resize with scale and set the pixel format on the encoder
+    // instead (keeps output identical across ffmpeg versions).
     execFileSync(FFMPEG_PATH, [
       "-y",
       "-framerate", "1",
       "-i", `${tmpDir}/keyframe%02d.png`,
-      "-vf", "minterpolate=mi_mode=mci:mi_width=256:mi_height=256:me_mode=bidir:me_thresh=100:vsbmc=1:fps=10:format=yuv420p",
+      "-vf", "scale=256:256:flags=bilinear,minterpolate=mi_mode=mci:me_mode=bidir:vsbmc=1:fps=10",
       "-c:v", "libx264",
       "-pix_fmt", "yuv420p",
       "-loglevel", "error",
@@ -211,11 +230,12 @@ export const generateOpenVideo = action({
 
     const mp4Filename = `/fallback-clips/${clipId}.mp4`;
     try {
+      // Same ffmpeg 6.1+ compatibility as the fallback path above.
       execFileSync(FFMPEG_PATH, [
         "-y",
         "-framerate", "1",
         "-i", `${tmpDir}/keyframe%02d.png`,
-        "-vf", "minterpolate=mi_mode=mci:mi_width=320:mi_height=320:me_mode=bidir:me_thresh=100:vsbmc=1:fps=10:format=yuv420p",
+        "-vf", "scale=320:320:flags=bilinear,minterpolate=mi_mode=mci:me_mode=bidir:vsbmc=1:fps=10",
         "-c:v", "libx264",
         "-pix_fmt", "yuv420p",
         "-loglevel", "error",

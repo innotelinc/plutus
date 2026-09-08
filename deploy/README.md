@@ -1,4 +1,4 @@
-# PixelShop deploy configuration
+# PLUTUS deploy configuration
 
 ## Directory layout
 
@@ -58,8 +58,9 @@ The web build bakes `NEXT_PUBLIC_CONVEX_URL` and
 `NEXT_PUBLIC_CONVEX_SITE_URL` into the static bundle. Set them at build time:
 
 ```bash
-NEXT_PUBLIC_CONVEX_URL=http://192.168.1.10:3210 \
-NEXT_PUBLIC_CONVEX_SITE_URL=http://192.168.1.10:3211 \
+HOST=$(node scripts/lan-ip.mjs)   # or set PLUTUS_HOST explicitly
+NEXT_PUBLIC_CONVEX_URL=http://$HOST:3210 \
+NEXT_PUBLIC_CONVEX_SITE_URL=http://$HOST:3211 \
   bun run build
 ```
 
@@ -71,7 +72,7 @@ See `.env.example` for the full variable list.
 | Volume            | Used by          | Purpose                                      |
 | ----------------- | ---------------- | -------------------------------------------- |
 | `data`            | backend          | Convex database + state                      |
-| `fallback-clips`  | backend + web    | fallback video clips when MuAPI is offline   |
+| `fallback-clips`  | backend + web    | fallback video clips when no image model is connected |
 
 The `fallback-clips` volume is mounted read-write in the backend (the pipeline
 writes generated clips there) and read-only in the web container (nginx serves
@@ -104,11 +105,12 @@ For local dev / LAN access, build with:
 
 ```bash
 docker build \
-  --build-arg NEXT_PUBLIC_CONVEX_URL=http://192.168.1.10:3210 \
-  -t pixelshop-web \
+  --build-arg NEXT_PUBLIC_CONVEX_URL=http://$(node scripts/lan-ip.mjs):3210 \
+  --build-arg NEXT_PUBLIC_CONVEX_SITE_URL=http://$(node scripts/lan-ip.mjs):3211 \
+  -t plutus-web \
   -f deploy/web.Dockerfile \
   .
 ```
 
-Then run it with `docker run -p 3000:80 pixelshop-web` or reference it in
+Then run it with `docker run -p 3000:80 plutus-web` or reference it in
 `docker-compose.yml` instead of the `nginx:1.27-alpine` image.

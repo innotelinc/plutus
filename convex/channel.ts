@@ -16,7 +16,7 @@ export const ensureChannel = mutation({
 
     const channelId = await ctx.db.insert("channels", {
       slug: "main",
-      name: "PixelShop",
+      name: "PLUTUS",
       status: "standby",
       segmentSeconds: 10,
       offline: false,
@@ -213,7 +213,7 @@ export const submitProduct = mutation({
     if (!channel) {
       const channelId = await ctx.db.insert("channels", {
         slug: "main",
-        name: "PixelShop",
+        name: "PLUTUS",
         status: "standby",
         segmentSeconds: 10,
         offline: false,
@@ -288,9 +288,9 @@ export const sendChat = mutation({
 // Uses public sample MP4s (Big Buck Bunny / Sintel clips from Google storage).
 
 const MOCK_VIDEOS = [
-  { url: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_2MB.mp4", title: "Big Buck Bunny", price: "$19.99", dialogue: "Welcome to PixelShop! Today's first feature — Big Buck Bunny, the classic animated short. A story of revenge and justice in the forest.", image: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Big_buck_bunny_poster_big.jpg" },
-  { url: "https://test-videos.co.uk/vids/jellyfish/mp4/h264/720/Jellyfish_720_10s_1MB.mp4", title: "Jellyfish Showcase", price: "$24.99", dialogue: "Our second feature — Jellyfish in crystal-clear 720p. A mesmerizing underwater showcase for the PixelShop player.", image: undefined as string | undefined },
-  { url: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4", title: "Bunny Encore (360p)", price: "$9.99", dialogue: "And now, an encore presentation at 360p — a perfect demo of the PixelShop player's smooth resolution transitions.", image: undefined as string | undefined },
+  { url: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_2MB.mp4", title: "Big Buck Bunny", price: "$19.99", dialogue: "Welcome to PLUTUS! Today's first feature — Big Buck Bunny, the classic animated short. A story of revenge and justice in the forest.", image: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Big_buck_bunny_poster_big.jpg" },
+  { url: "https://test-videos.co.uk/vids/jellyfish/mp4/h264/720/Jellyfish_720_10s_1MB.mp4", title: "Jellyfish Showcase", price: "$24.99", dialogue: "Our second feature — Jellyfish in crystal-clear 720p. A mesmerizing underwater showcase for the PLUTUS player.", image: undefined as string | undefined },
+  { url: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4", title: "Bunny Encore (360p)", price: "$9.99", dialogue: "And now, an encore presentation at 360p — a perfect demo of the PLUTUS player's smooth resolution transitions.", image: undefined as string | undefined },
 ];
 
 export const seedMockData = mutation({
@@ -305,7 +305,7 @@ export const seedMockData = mutation({
     if (!channel) {
       const channelId = await ctx.db.insert("channels", {
         slug: "main",
-        name: "PixelShop",
+        name: "PLUTUS",
         status: "standby",
         segmentSeconds: 10,
         offline: false,

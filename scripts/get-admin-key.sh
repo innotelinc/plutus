@@ -16,7 +16,10 @@
 set -e
 
 ENV_LOCAL="./.env.local"
-COMPOSE_PROJECT="${COMPOSE_PROJECT_NAME:-gliz}"
+COMPOSE_PROJECT="${COMPOSE_PROJECT_NAME:-plutus}"
+
+# Host address: PLUTUS_HOST env, else autodetected LAN IP, else 127.0.0.1.
+HOST_ADDR="${PLUTUS_HOST:-$(node scripts/lan-ip.mjs 2>/dev/null || echo 127.0.0.1)}"
 
 echo "→ Generating fresh admin key from backend..."
 
@@ -47,7 +50,7 @@ fi
 
 echo ""
 echo "→ Pushing functions (key must be fresh...)..."
-export CONVEX_SELF_HOSTED_URL="${CONVEX_SELF_HOSTED_URL:-http://192.168.1.10:3210}"
+export CONVEX_SELF_HOSTED_URL="${CONVEX_SELF_HOSTED_URL:-http://${HOST_ADDR}:3210}"
 export CONVEX_SELF_HOSTED_ADMIN_KEY="$ADMIN_KEY"
 npx convex dev --once 2>&1 | tail -3
 
@@ -58,5 +61,5 @@ npm run db:seed 2>&1 | tail -3
 echo ""
 echo "→ Done. Rebuild frontend with:"
 echo "   NEXT_PUBLIC_CONVEX_URL=$CONVEX_SELF_HOSTED_URL \\"
-echo "   NEXT_PUBLIC_CONVEX_SITE_URL=http://192.168.1.10:3211 \\"
+echo "   NEXT_PUBLIC_CONVEX_SITE_URL=http://${HOST_ADDR}:3211 \\"
 echo "   npm run build"

@@ -10,7 +10,7 @@
 # a mismatch is expected after a fresh start — update .env.local with the printed
 # key and re-run.
 #
-# Set GLIZ_ADMIN_KEY_CHECK_WARN_ONLY=1 to only warn without failing.
+# Set PLUTUS_ADMIN_KEY_CHECK_WARN_ONLY=1 to only warn without failing.
 
 set -e
 
@@ -69,9 +69,9 @@ echo "     npx convex dev --once"
 echo "     npm run db:seed"
 echo ""
 
-if [ "${GLIZ_ADMIN_KEY_CHECK_WARN_ONLY}" = "1" ]; then
-  echo "   (GLIZ_ADMIN_KEY_CHECK_WARN_ONLY=1 — only warning, deploy continues)"
+if [ "${PLUTUS_ADMIN_KEY_CHECK_WARN_ONLY}" = "1" ]; then
+  echo "   (PLUTUS_ADMIN_KEY_CHECK_WARN_ONLY=1 — only warning, deploy continues)"
 else
-  echo "   GLIZ_ADMIN_KEY_CHECK_WARN_ONLY is not set — exiting 1 to block deploy."
+  echo "   PLUTUS_ADMIN_KEY_CHECK_WARN_ONLY is not set — exiting 1 to block deploy."
   exit 1
 fi

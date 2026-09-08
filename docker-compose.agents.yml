@@ -1,6 +1,6 @@
-# Agent stack for PixelShop product scripting
+# Agent stack for PLUTUS product scripting
 #
-# OmniRoute is the self-hosted, OpenAI-compatible gateway that the PixelShop
+# OmniRoute is the self-hosted, OpenAI-compatible gateway that the PLUTUS
 # pipeline calls to write product scripts, and that OpenClaude + OpenClaw are
 # pointed at so interactive script-writing uses the same models.
 #

@@ -11,7 +11,7 @@ AIGC:
 
 # Hackathon log
 
-- **Project:** pixelshop
+- **Project:** plutus (formerly pixelshop)
 - **Event:** Convex All Gas Hackathon
 - **What it does:** AI-generated live shopping channel where users submit product URLs and watch AI-hosted video segments air in real time.
 - **Live app:** https://fearless-otter-334.convex.site

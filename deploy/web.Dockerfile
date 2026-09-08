@@ -8,11 +8,12 @@ COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
 # Copy source and build. NEXT_PUBLIC_CONVEX_URL is baked into the bundle and
-# must be reachable from the browser (default: local self-hosted backend).
+# must be reachable from the browser (default: autodetected at build time via
+# scripts/lan-ip.mjs; pass --build-arg to override).
 COPY . .
-ARG NEXT_PUBLIC_CONVEX_URL=http://192.168.1.10:3210
+ARG NEXT_PUBLIC_CONVEX_URL=""
 ENV NEXT_PUBLIC_CONVEX_URL=$NEXT_PUBLIC_CONVEX_URL
-ARG NEXT_PUBLIC_CONVEX_SITE_URL=http://192.168.1.10:3211
+ARG NEXT_PUBLIC_CONVEX_SITE_URL=""
 ENV NEXT_PUBLIC_CONVEX_SITE_URL=$NEXT_PUBLIC_CONVEX_SITE_URL
 # Keep heap usage bounded so the build fits on small / CI hosts.
 ENV NODE_OPTIONS="--max-old-space-size=2048"
