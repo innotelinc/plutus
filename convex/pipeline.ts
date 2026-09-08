@@ -1,4 +1,4 @@
-import { action, mutation, query } from "./_generated/server";
+import { action, mutation, query, type ActionCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import * as cheerio from "cheerio";
@@ -361,7 +361,7 @@ async function generateScript(
 // Calls the videoAction module which runs in Node.js runtime.
 
 async function generateOpenVideo(
-  ctx: any,
+  ctx: ActionCtx,
   prompt: string,
 ): Promise<string> {
   return await ctx.runAction(api.videoAction.generateOpenVideo, { prompt });
@@ -369,7 +369,7 @@ async function generateOpenVideo(
 
 // ─── Helper: generate fallback clip (procedural) ──────────────────────────────
 
-async function generateFallbackClip(ctx: any, prompt: string): Promise<string> {
+async function generateFallbackClip(ctx: ActionCtx, prompt: string): Promise<string> {
   const result = await ctx.runAction(api.videoAction.generateFallbackClip, { prompt });
   return result as string;
 }

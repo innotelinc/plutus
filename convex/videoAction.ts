@@ -2,12 +2,10 @@
 
 import { action } from "./_generated/server";
 import { v } from "convex/values";
-import { api } from "./_generated/api";
-
-// Node.js built-ins
-const crypto = require("crypto");
-const fs = require("fs");
-const { execFileSync } = require("child_process");
+import crypto from "node:crypto";
+import fs from "node:fs";
+import zlib from "node:zlib";
+import { execFileSync } from "node:child_process";
 
 // Path to ffmpeg binary — installed in the backend container.
 function findFfmpeg() {
@@ -83,7 +81,6 @@ function generateKeyframe(width: number, height: number, idx: number): Buffer {
   }
 
   // Encode as PNG
-  const zlib = require("zlib");
   const crc32 = (data: Uint8Array): number => {
     let c = 0xFFFFFFFF;
     const table: number[] = [];
