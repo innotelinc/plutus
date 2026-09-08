@@ -26,6 +26,9 @@ jobs:
       - name: Lint
         run: bun run lint
 
+      - name: Unit tests
+        run: bun test
+
   build:
     runs-on: ubuntu-latest
     steps:

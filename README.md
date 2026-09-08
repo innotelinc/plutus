@@ -1,11 +1,12 @@
 # 🛒 PLUTUS — Shop. Watch. Discover.
 
-**Self-hosted AI shopping channel: submit a product URL and watch an AI host present it in generated video clips — fully open-source, no external video APIs required.**
+**Self-hosted AI shopping channel (VideoOps): submit a product URL and watch an AI host present it in generated video clips — fully open-source, no external video APIs required.**
 
 [![CI](https://github.com/innotelinc/plutus/actions/workflows/ci.yml/badge.svg)](https://github.com/innotelinc/plutus/actions/workflows/ci.yml)
 [![Conformity](https://github.com/innotelinc/plutus/actions/workflows/conform.yml/badge.svg)](https://github.com/innotelinc/plutus/actions/workflows/conform.yml)
 [![Release](https://github.com/innotelinc/plutus/actions/workflows/release.yml/badge.svg)](https://github.com/innotelinc/plutus/actions/workflows/release.yml)
 [![Pages](https://github.com/innotelinc/plutus/actions/workflows/pages.yml/badge.svg)](https://github.com/innotelinc/plutus/actions/workflows/pages.yml)
+[![License: AGPL-3.0-or-later](https://img.shields.io/badge/License-AGPL--3.0--or--later-blue.svg)](LICENSE)
 
 </div>
 
@@ -28,6 +29,14 @@
 > — the static project landing is published through GitHub Pages.
 
 ---
+
+## What it is
+
+- A 24/7 AI shopping channel with a real-time broadcast schedule (rotation cron, standby screen, live ticker, chat)
+- A URL-to-video pipeline: scrape → script → keyframes → ffmpeg → air, with a fallback at every AI-dependent step
+- A self-hosted Convex backend with a custom image that generates clips in-container via ffmpeg
+- A broadcast player: event-driven clip switching, subtitles bound to clips, product cards
+- A Docker Compose stack: backend, dashboard, web, optional OmniRoute AI gateway
 
 ## Services
 
@@ -114,9 +123,11 @@ and animates them with ffmpeg (same approach, no external API needed).
 
 ## Status
 
-**Phase: v0.1 — self-hosted demo.** The stack boots, the playback test passes
-(5 title transitions, no errors, live badge), and submissions trigger the
-pipeline. Video generation requires an OmniRoute image model to be connected.
+**Phase: v0.2 — studio.** The stack boots, the playback check passes, and
+submissions air end-to-end (verified with the headless-browser checks: submit →
+scrape → script → fallback clips → scheduled → live). AI-generated keyframes
+require an OmniRoute image provider; without one the channel airs procedural
+fallback clips so the screen is never dead.
 
 ## Repo layout
 
@@ -134,34 +145,50 @@ deploy/          Deployment config
   web.Dockerfile  Web container Dockerfile (optional)
   README.md       Deployment docs
 docker-compose.yml       Main stack (backend, dashboard, web)
+docker-compose.local.yml Port-offset overlay for busy shared hosts
 docker-compose.prod.yml  Production overlay
 docker-compose.agents.yml OmniRoute agent stack
 scripts/         Utility scripts
+  lan-ip.mjs           LAN IP autodetection (PLUTUS_HOST)
   browser-check.mjs    Headless browser verification (play + submit tests)
   get-admin-key.sh     Auto-fetch admin key from backend
   push-and-seed.sh     Generate key + push + seed in one shot
 src/             Next.js frontend
   app/           App router pages
   components/    React components
+tests/           Unit tests (bun test)
+web/landing/     GitHub Pages site (home, about, README)
 LICENSE          AGPL-3.0-or-later
-Makefile         Convenience targets
+Makefile         Operator workflow (make help)
 setup.sh         One-command setup
 ```
 
 ## License
 
-PLUTUS is licensed under **AGPL-3.0-or-later** — see [LICENSE](LICENSE) for details.
+PLUTUS is licensed under **AGPL-3.0-or-later** — see [LICENSE](LICENSE) for the
+full canonical text. It builds on the self-hosted Convex backend (Apache-2.0) and
+ffmpeg (LGPL/GPL); those upstream licenses are retained by the respective projects.
 
 ## Contributing
 
 1. Fork the repo
 2. Create a feature branch
 3. Make your changes
-4. Run `make test` to verify
+4. Run `bun test` + `bun run lint` to verify
 5. Submit a pull request
 
 ## Documentation
 
-- [Convex self-hosted guide](https://github.com/get-convex/convex-backend/blob/main/self-hosted/README.md)
-- [OmniRoute](https://github.com/diegosouzapw/OmniRoute)
-- [ffmpeg minterpolate docs](https://ffmpeg.org/ffmpeg-filters.html#minterpolate)
+| Document | Covers |
+| --- | --- |
+| [docs/stack.md](docs/stack.md) | PLUTUS's role in the Innotel Platform Stack — owns / consumes boundaries |
+| [deploy/README.md](deploy/README.md) | Deployment: images, nginx, volumes, environment |
+| [.env.example](.env.example) | Every environment variable, with purpose notes |
+| [web/landing/about.html](https://innotelinc.github.io/plutus/about.html) | What PLUTUS is, how the pipeline airs a segment |
+| [Convex self-hosted guide](https://github.com/get-convex/convex-backend/blob/main/self-hosted/README.md) | Upstream backend reference |
+| [OmniRoute](https://github.com/diegosouzapw/OmniRoute) | AI gateway (scripting + image generation) |
+| [ffmpeg minterpolate](https://ffmpeg.org/ffmpeg-filters.html#minterpolate) | Motion interpolation filter |
+
+---
+
+© 2026 PLUTUS — the AI Shopping Channel. Part of the [Innotel Platform Stack](https://github.com/innotelinc/innotel-platform-stack) · [GitHub](https://github.com/innotelinc/plutus) · [Landing](https://innotelinc.github.io/plutus/)

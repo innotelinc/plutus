@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PLUTUS — AI shopping channel</title>
-  <meta name="description" content="PLUTUS is a self-hosted AI shopping channel: submit a product URL and an AI host presents it in generated video clips. Fully open-source, no external video APIs.">
-  <meta property="og:title" content="PLUTUS — AI shopping channel">
+  <title>PLUTUS — The AI Shopping Channel — Platform</title>
+  <meta name="description" content="PLUTUS is a self-hosted AI shopping channel: submit a product URL and an AI host presents it in generated video clips. Scriptwriting via OmniRoute, motion via ffmpeg — no external video APIs.">
+  <meta property="og:title" content="PLUTUS — The AI Shopping Channel">
   <meta property="og:description" content="Self-hosted AI shopping channel: product URL → AI-generated video clips. No external video APIs, no vendor lock-in.">
   <meta property="og:type" content="website">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0e13'/%3E%3Cpath d='M32 14 L32 50 M14 32 L50 32' stroke='%23f5b544' stroke-width='3' fill='none'/%3E%3Ccircle cx='32' cy='32' r='12' fill='none' stroke='%23f5b544' stroke-width='3'/%3E%3C/svg%3E">
@@ -51,15 +51,8 @@
       -webkit-backdrop-filter: blur(24px);
       border-bottom: 1px solid var(--p-border);
     }
-    .topbar-inner {
-      display: flex; align-items: center; gap: 20px;
-      height: 60px;
-    }
-    .brand {
-      display: flex; align-items: center; gap: 10px;
-      font-weight: 650; letter-spacing: 0.04em;
-      color: var(--p-text);
-    }
+    .topbar-inner { display: flex; align-items: center; gap: 20px; height: 60px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; letter-spacing: 0.04em; color: var(--p-text); }
     .brand:hover { color: var(--p-text); }
     .brand .mark {
       display: grid; place-items: center;
@@ -67,7 +60,6 @@
       background: linear-gradient(135deg, var(--p-accent), #d97706);
     }
     .brand .mark svg { width: 17px; height: 17px; display: block; }
-    .brand .dot { color: var(--p-accent); }
     .topbar nav { margin-left: auto; display: flex; align-items: center; gap: 4px; }
     .topbar nav a {
       color: var(--p-text-secondary);
@@ -76,6 +68,7 @@
       transition: color .15s var(--ease), background .15s var(--ease);
     }
     .topbar nav a:hover { color: var(--p-text); background: var(--p-surface-hover); }
+    .topbar nav a[aria-current="page"] { color: var(--p-accent); background: var(--p-accent-tint); }
     .topbar .gh {
       display: inline-flex; align-items: center; gap: 8px;
       margin-left: 8px;
@@ -119,23 +112,17 @@
       70% { box-shadow: 0 0 0 9px rgba(61, 220, 132, 0); }
       100% { box-shadow: 0 0 0 0 rgba(61, 220, 132, 0); }
     }
-    h1 {
-      font-size: clamp(2.2rem, 5.5vw, 3.4rem);
-      line-height: 1.08; letter-spacing: -0.02em;
-      margin: 0 0 20px; font-weight: 700;
-    }
+    h1 { font-size: clamp(2.2rem, 5.5vw, 3.4rem); line-height: 1.08; letter-spacing: -0.02em; margin: 0 0 20px; font-weight: 700; }
     h1 .accent { color: var(--p-accent); }
-    .lede {
-      font-size: 1.125rem; color: var(--p-text-secondary);
-      max-width: 660px; margin: 0 0 32px;
-    }
+    h2 { font-size: 1.7rem; letter-spacing: -0.01em; margin: 0 0 8px; }
+    h2 .accent { color: var(--p-accent); }
+    .lede { font-size: 1.125rem; color: var(--p-text-secondary); max-width: 660px; margin: 0 0 32px; }
     .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
     .btn {
       display: inline-flex; align-items: center; gap: 8px;
       border-radius: var(--radius-md);
       padding: 11px 20px; font-size: 15px; font-weight: 550;
-      border: 1px solid transparent;
-      cursor: pointer;
+      border: 1px solid transparent; cursor: pointer;
       transition: background .15s var(--ease), border-color .15s var(--ease);
     }
     .btn-primary { background: var(--p-accent); color: #0a0e13; font-weight: 600; }
@@ -165,29 +152,16 @@
     .quickstart .copy:hover { border-color: var(--p-accent); color: var(--p-text); }
     .quickstart .copy.copied { color: var(--p-success); border-color: var(--p-success); }
 
-    .stats {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 12px; margin: 56px 0 0;
-    }
-    .stat {
-      background: var(--p-bg-elevated);
-      border: 1px solid var(--p-border);
-      border-radius: var(--radius-md);
-      padding: 16px 18px;
-    }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 56px 0 0; }
+    .stat { background: var(--p-bg-elevated); border: 1px solid var(--p-border); border-radius: var(--radius-md); padding: 16px 18px; }
     .stat b { display: block; font-size: 1.35rem; font-variant-numeric: tabular-nums; }
     .stat span { color: var(--p-text-secondary); font-size: 13px; }
 
     section { padding: 64px 0; }
-    section h2 {
-      font-size: 1.7rem; letter-spacing: -0.01em;
-      margin: 0 0 8px;
-    }
     section .section-sub { color: var(--p-text-secondary); margin: 0 0 32px; max-width: 620px; }
-
     .grid { display: grid; gap: 14px; }
     .grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
     .card {
       background: var(--p-bg-elevated);
       border: 1px solid var(--p-border);
@@ -208,25 +182,52 @@
     }
     .card code { background: rgba(159, 176, 191, .12); border-radius: 6px; padding: 1px 6px; font-size: .88em; }
 
-    footer {
-      border-top: 1px solid var(--p-border);
-      padding: 32px 0 40px;
-      color: var(--p-text-muted);
+    .component { display: flex; gap: 14px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--p-border); }
+    .component:last-child { border-bottom: none; }
+    .component code { color: var(--p-accent); font-size: 14px; flex: 0 0 220px; }
+    .component .lang { color: var(--p-text-muted); font-size: 12px; flex: 0 0 64px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .component p { margin: 0; color: var(--p-text-secondary); font-size: 14px; }
+
+    .terminal {
+      background: #07090c;
+      border: 1px solid var(--p-border);
+      border-radius: var(--radius-lg);
+      padding: 20px 22px;
       font-size: 13.5px;
+      line-height: 1.75;
+      overflow-x: auto;
+      max-width: 780px;
     }
-    .foot-inner {
-      display: flex; flex-wrap: wrap; gap: 16px;
-      justify-content: space-between;
-      align-items: center;
+    .terminal .p { color: var(--p-accent); }
+    .terminal .out { color: var(--p-text-secondary); }
+    .terminal .ok { color: var(--p-success); }
+
+    .doors { max-width: 720px; }
+    .door { display: grid; grid-template-columns: 90px 1fr auto; gap: 12px; align-items: center; padding: 12px 4px; border-bottom: 1px solid var(--p-border); }
+    .door:last-child { border-bottom: none; }
+    .door b { font-size: 14px; }
+    .door code { color: var(--p-text-secondary); font-size: 13px; }
+    .badge {
+      font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+      border-radius: 999px; padding: 3px 10px; border: 1px solid;
     }
+    .badge.live { color: var(--p-success); border-color: rgba(61, 220, 132, 0.4); background: rgba(61, 220, 132, 0.08); }
+    .badge.planned { color: var(--p-text-muted); border-color: var(--p-border); background: transparent; }
+
+    .road { max-width: 720px; }
+    .mile { display: grid; grid-template-columns: 150px 1fr auto; gap: 14px; align-items: baseline; padding: 14px 4px; border-bottom: 1px solid var(--p-border); }
+    .mile:last-child { border-bottom: none; }
+    .mile b { font-size: 14px; color: var(--p-text); white-space: nowrap; }
+    .mile p { margin: 0; color: var(--p-text-secondary); font-size: 14px; }
+    .mile .badge.done { color: var(--p-success); border-color: rgba(61, 220, 132, 0.4); background: rgba(61, 220, 132, 0.08); }
+    .mile .badge.now { color: var(--p-accent); border-color: rgba(245, 181, 68, 0.45); background: var(--p-accent-tint); }
+
+    footer { border-top: 1px solid var(--p-border); padding: 32px 0 40px; color: var(--p-text-muted); font-size: 13.5px; }
+    .foot-inner { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; }
     footer a { color: var(--p-text-secondary); }
     footer a:hover { color: var(--p-text); }
     .foot-links { display: flex; gap: 18px; flex-wrap: wrap; }
-    .foot-credits {
-      margin: 18px 0 0; padding-top: 14px;
-      border-top: 1px solid var(--p-border);
-      font-size: 12.5px; line-height: 1.7;
-    }
+    .foot-credits { margin: 18px 0 0; padding-top: 14px; border-top: 1px solid var(--p-border); font-size: 12.5px; line-height: 1.7; }
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -237,19 +238,19 @@
 <body>
   <header class="topbar">
     <div class="wrap topbar-inner">
-      <a class="brand" href="#top">
+      <a class="brand" href="./index.html">
         <span class="mark" aria-hidden="true">
           <svg viewBox="0 0 32 32">
-            <circle cx="16" cy="16" r="6" fill="none" stroke="%23f5b544" stroke-width="2"/>
-            <circle cx="16" cy="14" r="2" fill="%23f5b544"/>
-            <path d="M10 22 Q16 26 22 22" fill="none" stroke="%23f5b544" stroke-width="2"/>
+            <circle cx="16" cy="16" r="12" fill="none" stroke="#0a0e13" stroke-width="2.4"/>
+            <path d="M16 6 L16 26 M6 16 L26 16" stroke="#0a0e13" stroke-width="2.4"/>
           </svg>
         </span>
-        PLUTUS<span class="dot">.</span>
+        PLUTUS
       </a>
       <nav>
-        <a href="#features">Features</a>
-        <a href="#stack">Stack</a>
+        <a href="./index.html" aria-current="page">Home</a>
+        <a href="./about.html">About</a>
+        <a href="./readme.html">README</a>
         <a class="gh" href="https://github.com/innotelinc/plutus">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
           GitHub
@@ -261,55 +262,99 @@
   <main>
     <div class="hero" id="top">
       <div class="wrap hero-inner">
-        <p class="kicker"><span class="pulse" aria-hidden="true"></span> v1.0 · VideoOps live</p>
+        <p class="kicker"><span class="pulse" aria-hidden="true"></span> v0.2 · VideoOps · live</p>
         <h1>Shopping, <span class="accent">auto-generated</span> in video.</h1>
         <p class="lede">
-          PLUTUS is a self-hosted AI shopping channel: a viewer submits a product URL and an
-          AI host presents it in a generated video clip. Scriptwriting and keyframe generation
-          run through OmniRoute; ffmpeg interpolates between keyframes. No external video APIs,
-          no vendor lock-in, no cloud account required.
+          PLUTUS — the AI Shopping Channel — is a self-hosted live shopping platform: a viewer
+          submits a product URL, an AI host scripts it, keyframes are generated and interpolated
+          into motion with ffmpeg, and the segment airs on the channel. No external video APIs,
+          no vendor lock-in, no cloud account.
         </p>
         <div class="cta-row">
-          <a class="btn btn-primary" href="https://github.com/innotelinc/plutus">View on GitHub</a>
-          <a class="btn btn-secondary" href="https://github.com/innotelinc/plutus#quick-start">Quick start</a>
+          <a class="btn btn-primary" href="https://github.com/innotelinc/plutus#quick-start">Get started</a>
+          <a class="btn btn-secondary" href="./about.html">About PLUTUS</a>
         </div>
         <div class="quickstart">
           <code><span class="c">$</span> git clone https://github.com/innotelinc/plutus.git &amp;&amp; cd plutus &amp;&amp; cp .env.example .env &amp;&amp; ./setup.sh</code>
           <button class="copy" id="copy-btn" type="button" aria-label="Copy quick start command">copy</button>
         </div>
         <div class="stats">
-          <div class="stat"><b>AI video</b><span>T2I keyframes + ffmpeg</span></div>
-          <div class="stat"><b>OmniRoute</b><span>350+ AI providers</span></div>
-          <div class="stat"><b>Self-hosted</b><span>no external video APIs</span></div>
-          <div class="stat"><b>Open source</b><span>AGPL-3.0-or-later</span></div>
+          <div class="stat"><b>URL → video</b><span>one paste airs a segment</span></div>
+          <div class="stat"><b>3 keyframes</b><span>+ ffmpeg minterpolate</span></div>
+          <div class="stat"><b>0</b><span>external video APIs</span></div>
+          <div class="stat"><b>5 services</b><span>one docker compose up</span></div>
         </div>
       </div>
     </div>
 
     <section id="features">
       <div class="wrap">
-        <h2>Generated video, <span class="accent">from a URL</span>.</h2>
-        <p class="section-sub">PLUTUS turns a product URL into a short video clip — an AI writes the script, generates keyframes, and ffmpeg smooths them into motion.</p>
+        <h2>Channel-first, <span class="accent">fallback-safe</span>.</h2>
+        <p class="section-sub">The safety of a broadcast schedule with the immediacy of a chat prompt — every submission has a path to air, even with no AI provider connected.</p>
         <div class="grid grid-3">
-          <div class="card"><span class="icon" aria-hidden="true">🎬</span><h3>AI-generated clips</h3><p>Submit a product URL and get back a video clip — script, keyframes, and motion, all generated.</p></div>
+          <div class="card"><span class="icon" aria-hidden="true">🎬</span><h3>AI-generated clips</h3><p>Submit a product URL and get back a video segment — script, keyframes, and motion, all generated.</p></div>
           <div class="card"><span class="icon" aria-hidden="true">🔓</span><h3>Fully open source</h3><p>No external video APIs, no vendor lock-in. T2I keyframes via OmniRoute + ffmpeg minterpolate.</p></div>
-          <div class="card"><span class="icon" aria-hidden="true">🤖</span><h3>OmniRoute gateway</h3><p>350+ AI providers behind one OpenAI-compatible endpoint. Rotate providers in one place.</p></div>
-          <div class="card"><span class="icon" aria-hidden="true">🎥</span><h3>Keyframe + motion</h3><p>3 generated keyframes per clip, smoothed with ffmpeg minterpolate for fluid motion.</p></div>
-          <div class="card"><span class="icon" aria-hidden="true">🐳</span><h3>Docker Compose stack</h3><p>Backend, dashboard, web, optional OmniRoute — one compose up.</p></div>
-          <div class="card"><span class="icon" aria-hidden="true">📦</span><h3>Self-contained backend</h3><p>Custom backend image ships ffmpeg for in-container clip generation.</p></div>
+          <div class="card"><span class="icon" aria-hidden="true">🛟</span><h3>Fallback studio</h3><p>No image provider connected? Procedural keyframes keep the channel airing — never a dead screen.</p></div>
+          <div class="card"><span class="icon" aria-hidden="true">🎥</span><h3>Broadcast player</h3><p>Event-driven clip switching, subtitles bound to clips, standby screen, live ticker, chat.</p></div>
+          <div class="card"><span class="icon" aria-hidden="true">📡</span><h3>Real-time schedule</h3><p>Convex subscriptions keep every viewer in sync with the channel clock — no polling loops.</p></div>
+          <div class="card"><span class="icon" aria-hidden="true">🐳</span><h3>Docker Compose stack</h3><p>Backend, dashboard, web, optional OmniRoute — one compose up, LAN-autodetected hosts.</p></div>
         </div>
       </div>
     </section>
 
-    <section id="stack">
+    <section id="system">
       <div class="wrap">
-        <h2>The stack<span class="accent">.</span></h2>
-        <p class="section-sub">A Next.js frontend, a self-hosted Convex backend with ffmpeg, and OmniRoute for AI — all containerized.</p>
-        <div class="grid grid-3">
-          <div class="card"><h3>Web UI</h3><p>Next.js static export served by Nginx. Product browsing and video playback.</p></div>
-          <div class="card"><h3>Convex backend</h3><p>Self-hosted Convex with a custom image that ships ffmpeg for in-container clip generation.</p></div>
-          <div class="card"><h3>AI gateway</h3><p>OmniRoute fronts all AI providers — scriptwriting and keyframe generation.</p></div>
-          <div class="card"><h3>Video pipeline</h3><p>T2I keyframes + ffmpeg minterpolate = smooth motion between generated frames.</p></div>
+        <h2>A real channel, <span class="accent">not a slide deck</span>.</h2>
+        <p class="section-sub">The v0.2 stack is runnable today: a self-hosted Convex backend, a Node action runtime with ffmpeg, and a static-export frontend.</p>
+        <div class="grid grid-2">
+          <div>
+            <div class="component"><code>convex/pipeline.ts</code><span class="lang">action</span><p>Orchestrates every submission: scrape → script → keyframes → schedule → air, with retries and fallbacks.</p></div>
+            <div class="component"><code>convex/videoAction.ts</code><span class="lang">node</span><p>Generates keyframes (T2I or procedural PNG) and encodes clips with ffmpeg minterpolate — inside the container.</p></div>
+            <div class="component"><code>convex/channel.ts</code><span class="lang">convex</span><p>Channel state: schedule rotation, product lifecycle, rate limits, SSRF-guarded submission.</p></div>
+            <div class="component"><code>src/app/page.tsx</code><span class="lang">react</span><p>The broadcast UI: player, subtitles, standby screen, ticker, chat, submit box.</p></div>
+          </div>
+          <div>
+            <div class="terminal">
+              <div><span class="p">$</span> make push &amp;&amp; make build &amp;&amp; make up</div>
+              <div class="out">✔ Convex functions ready (18.7s)</div>
+              <div class="out">○  (Static)  prerendered as static content</div>
+              <div class="out"> Container plutus-backend-1  Healthy</div>
+              <div class="out"> Container plutus-web-1  Started</div>
+              <div>&nbsp;</div>
+              <div><span class="p">$</span> make verify</div>
+              <div class="out">[submit] submitting https://example.com</div>
+              <div class="out">t=122s: YOU'RE ON AIR! 📺 PX-1009 just joined the rotation.</div>
+              <div class="ok">✅ CHECK PASSED</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="doors">
+      <div class="wrap">
+        <h2>One platform, <span class="accent">five doors</span>.</h2>
+        <p class="section-sub">Every surface hangs off its own host under <code>plutus.innotel.us</code>, wildcard TLS via Cerulean, routed by NPM Edge.</p>
+        <div class="doors">
+          <div class="door"><b>App</b><code>app.plutus.innotel.us</code><span class="badge planned">planned</span></div>
+          <div class="door"><b>Backend</b><code>api.plutus.innotel.us · Convex</code><span class="badge planned">planned</span></div>
+          <div class="door"><b>Dashboard</b><code>dash.plutus.innotel.us · Convex dashboard</code><span class="badge planned">planned</span></div>
+          <div class="door"><b>AI gateway</b><code>OmniRoute · 350+ providers</code><span class="badge live">live</span></div>
+          <div class="door"><b>Pages</b><code>innotelinc.github.io/plutus</code><span class="badge live">live</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="roadmap">
+      <div class="wrap">
+        <h2>Roadmap<span class="accent">.</span></h2>
+        <p class="section-sub">Milestone-driven and honest — the channel airs what exists today.</p>
+        <div class="road">
+          <div class="mile"><b>v0.1 — demo</b><p>Self-hosted stack: playback core, seeded schedule, submission pipeline, static export on nginx.</p><span class="badge done">shipped</span></div>
+          <div class="mile"><b>v0.2 — studio</b><p>PLUTUS rename, LAN-IP autodetection, ffmpeg 6.1 clip fixes, spec-correct fallback encoder, unit tests.</p><span class="badge now">current</span></div>
+          <div class="mile"><b>v0.3 — AI studio</b><p>Image provider wired through OmniRoute for T2I keyframes; scripted clips by default, procedural as fallback.</p><span class="badge planned">next</span></div>
+          <div class="mile"><b>v0.4 — identity</b><p>Authentik SSO via Cerulean, viewer accounts, chat moderation, per-viewer submission quotas.</p><span class="badge planned">later</span></div>
+          <div class="mile"><b>v1.0 — release</b><p>Hardening, docs, billing via Magnate for featured slots, public release artifacts.</p><span class="badge planned">later</span></div>
         </div>
       </div>
     </section>
@@ -317,12 +362,12 @@
 
   <footer>
     <div class="wrap foot-inner">
-      <span>PLUTUS — AI shopping channel. AGPL-3.0-or-later. Part of the <a href="https://github.com/innotelinc/innotel-platform-stack">Innotel Platform Stack</a>.</span>
+      <span>PLUTUS — the AI Shopping Channel. AGPL-3.0-or-later. Part of the <a href="https://github.com/innotelinc/innotel-platform-stack">Innotel Platform Stack</a>.</span>
       <span class="foot-links">
+        <a href="./about.html">About</a>
+        <a href="./readme.html">README</a>
         <a href="https://github.com/innotelinc/plutus">GitHub</a>
-        <a href="https://innotelinc.github.io/plutus">Pages</a>
         <a href="https://github.com/innotelinc/plutus/releases">Releases</a>
-        <a href="https://github.com/innotelinc/innotel-platform-stack">Innotel Platform Stack</a>
       </span>
     </div>
     <p class="foot-credits wrap">Innotel Platform — <a href="https://innotelinc.github.io/cerulean/">Cerulean</a> (Trust) · <a href="https://innotelinc.github.io/onyx/">ONYX</a> (Storage) · <a href="https://innotelinc.github.io/magnate/">Magnate</a> (Revenue) · <a href="https://github.com/innotelinc/npm">NPM Edge</a> · <a href="https://innotelinc.github.io/monarch/">Monarch</a> (MediaOps) · <a href="https://innotelinc.github.io/zeus/">Zeus</a> (VoiceOps) · <a href="https://innotelinc.github.io/oasis/">Oasis</a> (MailOps) · <a href="https://innotelinc.github.io/signara/">Signara</a> (DocumentOps) · <a href="https://innotelinc.github.io/rizzaura/">Rizz Aura</a> (CommunityOps) · <a href="https://innotelinc.github.io/capstone/">Capstone</a> (AgentOps) · <a href="https://innotelinc.github.io/zapit/">Zapit</a> (TransferOps) · <a href="https://innotelinc.github.io/atheniq/">AthenIQ</a> (LearningOps) · <a href="https://innotelinc.github.io/distro/">Distro</a> (BuilderOps) · PLUTUS (VideoOps)</p>
