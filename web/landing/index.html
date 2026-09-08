@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PLUTUS — AI shopping channel</title>
+  <meta name="description" content="PLUTUS is a self-hosted AI shopping channel: submit a product URL and an AI host presents it in generated video clips. Fully open-source, no external video APIs.">
+  <meta property="og:title" content="PLUTUS — AI shopping channel">
+  <meta property="og:description" content="Self-hosted AI shopping channel: product URL → AI-generated video clips. No external video APIs, no vendor lock-in.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0e13'/%3E%3Cpath d='M32 14 L32 50 M14 32 L50 32' stroke='%23f5b544' stroke-width='3' fill='none'/%3E%3Ccircle cx='32' cy='32' r='12' fill='none' stroke='%23f5b544' stroke-width='3'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: dark;
+      --p-bg: #0a0e13;
+      --p-bg-elevated: #10161d;
+      --p-surface: #16202a;
+      --p-surface-hover: #1d2936;
+      --p-border: #22303e;
+      --p-text: #f2f7fb;
+      --p-text-secondary: #c8d6e2;
+      --p-text-muted: #9fb0bf;
+      --p-accent: #f5b544;
+      --p-accent-hover: #fbbf24;
+      --p-accent-tint: rgba(245, 181, 68, 0.12);
+      --p-success: #3ddc84;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --ease: cubic-bezier(.2, .8, .2, 1);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; background: var(--p-bg); color: var(--p-text);
+      font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+      background: radial-gradient(1200px 600px at 20% -10%, #1a1508 0%, var(--p-bg) 55%);
+      background-attachment: fixed;
+    }
+    ::selection { background: var(--p-accent-tint); }
+    a { color: var(--p-accent); text-decoration: none; }
+    a:hover { color: var(--p-accent-hover); }
+    code, pre { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 10;
+      background: rgba(10, 14, 19, 0.72);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--p-border);
+    }
+    .topbar-inner {
+      display: flex; align-items: center; gap: 20px;
+      height: 60px;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 650; letter-spacing: 0.04em;
+      color: var(--p-text);
+    }
+    .brand:hover { color: var(--p-text); }
+    .brand .mark {
+      display: grid; place-items: center;
+      width: 28px; height: 28px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--p-accent), #d97706);
+    }
+    .brand .mark svg { width: 17px; height: 17px; display: block; }
+    .brand .dot { color: var(--p-accent); }
+    .topbar nav { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+    .topbar nav a {
+      color: var(--p-text-secondary);
+      padding: 6px 12px; border-radius: var(--radius-sm);
+      font-size: 14px;
+      transition: color .15s var(--ease), background .15s var(--ease);
+    }
+    .topbar nav a:hover { color: var(--p-text); background: var(--p-surface-hover); }
+    .topbar .gh {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-left: 8px;
+      border: 1px solid var(--p-border);
+      border-radius: var(--radius-md);
+      padding: 7px 14px;
+      color: var(--p-text);
+      font-size: 14px;
+      transition: border-color .15s var(--ease), background .15s var(--ease);
+    }
+    .topbar .gh:hover { border-color: var(--p-accent); background: var(--p-accent-tint); color: var(--p-text); }
+
+    .hero { position: relative; overflow: hidden; padding: 96px 0 72px; }
+    .hero::before {
+      content: "";
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(600px 320px at 70% -10%, rgba(245, 181, 68, 0.14), transparent 70%),
+        radial-gradient(500px 300px at 15% 110%, rgba(217, 119, 6, 0.06), transparent 70%);
+      pointer-events: none;
+    }
+    .hero-inner { position: relative; max-width: 760px; }
+    .kicker {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--p-accent-hover);
+      background: var(--p-accent-tint);
+      border: 1px solid rgba(245, 181, 68, 0.3);
+      border-radius: 999px;
+      padding: 5px 14px;
+      margin: 0 0 24px;
+    }
+    .kicker .pulse {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--p-success);
+      box-shadow: 0 0 0 0 rgba(61, 220, 132, 0.5);
+      animation: pulse 2.4s var(--ease) infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(61, 220, 132, 0.45); }
+      70% { box-shadow: 0 0 0 9px rgba(61, 220, 132, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(61, 220, 132, 0); }
+    }
+    h1 {
+      font-size: clamp(2.2rem, 5.5vw, 3.4rem);
+      line-height: 1.08; letter-spacing: -0.02em;
+      margin: 0 0 20px; font-weight: 700;
+    }
+    h1 .accent { color: var(--p-accent); }
+    .lede {
+      font-size: 1.125rem; color: var(--p-text-secondary);
+      max-width: 660px; margin: 0 0 32px;
+    }
+    .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      border-radius: var(--radius-md);
+      padding: 11px 20px; font-size: 15px; font-weight: 550;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background .15s var(--ease), border-color .15s var(--ease);
+    }
+    .btn-primary { background: var(--p-accent); color: #0a0e13; font-weight: 600; }
+    .btn-primary:hover { background: var(--p-accent-hover); color: #0a0e13; }
+    .btn-secondary { border-color: var(--p-border); color: var(--p-text); background: transparent; }
+    .btn-secondary:hover { border-color: var(--p-accent); background: var(--p-accent-tint); color: var(--p-text); }
+    .quickstart {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--p-bg-elevated);
+      border: 1px solid var(--p-border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      max-width: 680px;
+      font-size: 13.5px;
+    }
+    .quickstart code { color: var(--p-text); white-space: nowrap; overflow-x: auto; }
+    .quickstart code .c { color: var(--p-text-muted); }
+    .quickstart .copy {
+      margin-left: auto; flex: 0 0 auto;
+      background: transparent; border: 1px solid var(--p-border);
+      color: var(--p-text-secondary);
+      border-radius: var(--radius-sm);
+      font: inherit; font-size: 12px;
+      padding: 4px 10px; cursor: pointer;
+      transition: border-color .15s var(--ease), color .15s var(--ease);
+    }
+    .quickstart .copy:hover { border-color: var(--p-accent); color: var(--p-text); }
+    .quickstart .copy.copied { color: var(--p-success); border-color: var(--p-success); }
+
+    .stats {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px; margin: 56px 0 0;
+    }
+    .stat {
+      background: var(--p-bg-elevated);
+      border: 1px solid var(--p-border);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+    }
+    .stat b { display: block; font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+    .stat span { color: var(--p-text-secondary); font-size: 13px; }
+
+    section { padding: 64px 0; }
+    section h2 {
+      font-size: 1.7rem; letter-spacing: -0.01em;
+      margin: 0 0 8px;
+    }
+    section .section-sub { color: var(--p-text-secondary); margin: 0 0 32px; max-width: 620px; }
+
+    .grid { display: grid; gap: 14px; }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+
+    .card {
+      background: var(--p-bg-elevated);
+      border: 1px solid var(--p-border);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      transition: border-color .15s var(--ease), transform .15s var(--ease);
+    }
+    .card:hover { border-color: rgba(245, 181, 68, 0.4); transform: translateY(-2px); }
+    .card h3 { margin: 0 0 6px; font-size: 1.02rem; }
+    .card p { margin: 0; color: var(--p-text-secondary); font-size: 14px; }
+    .card .icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px;
+      border-radius: var(--radius-md);
+      background: var(--p-accent-tint);
+      margin-bottom: 14px;
+      font-size: 16px;
+    }
+    .card code { background: rgba(159, 176, 191, .12); border-radius: 6px; padding: 1px 6px; font-size: .88em; }
+
+    footer {
+      border-top: 1px solid var(--p-border);
+      padding: 32px 0 40px;
+      color: var(--p-text-muted);
+      font-size: 13.5px;
+    }
+    .foot-inner {
+      display: flex; flex-wrap: wrap; gap: 16px;
+      justify-content: space-between;
+      align-items: center;
+    }
+    footer a { color: var(--p-text-secondary); }
+    footer a:hover { color: var(--p-text); }
+    .foot-links { display: flex; gap: 18px; flex-wrap: wrap; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#top">
+        <span class="mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32">
+            <circle cx="16" cy="16" r="6" fill="none" stroke="%23f5b544" stroke-width="2"/>
+            <circle cx="16" cy="14" r="2" fill="%23f5b544"/>
+            <path d="M10 22 Q16 26 22 22" fill="none" stroke="%23f5b544" stroke-width="2"/>
+          </svg>
+        </span>
+        PLUTUS<span class="dot">.</span>
+      </a>
+      <nav>
+        <a href="#features">Features</a>
+        <a href="#stack">Stack</a>
+        <a href="https://github.com/innotelinc/plutus">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="hero" id="top">
+      <div class="wrap hero-inner">
+        <p class="kicker"><span class="pulse" aria-hidden="true"></span> v1.0 · VideoOps live</p>
+        <h1>Shopping, <span class="accent">auto-generated</span> in video.</h1>
+        <p class="lede">
+          PLUTUS is a self-hosted AI shopping channel: a viewer submits a product URL and an
+          AI host presents it in a generated video clip. Scriptwriting and keyframe generation
+          run through OmniRoute; ffmpeg interpolates between keyframes. No external video APIs,
+          no vendor lock-in, no cloud account required.
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://github.com/innotelinc/plutus">View on GitHub</a>
+          <a class="btn btn-secondary" href="https://github.com/innotelinc/plutus#quick-start">Quick start</a>
+        </div>
+        <div class="quickstart">
+          <code><span class="c">$</span> git clone https://github.com/innotelinc/plutus.git &amp;&amp; cd plutus &amp;&amp; cp .env.example .env &amp;&amp; ./setup.sh</code>
+          <button class="copy" id="copy-btn" type="button" aria-label="Copy quick start command">copy</button>
+        </div>
+        <div class="stats">
+          <div class="stat"><b>AI video</b><span>T2I keyframes + ffmpeg</span></div>
+          <div class="stat"><b>OmniRoute</b><span>350+ AI providers</span></div>
+          <div class="stat"><b>Self-hosted</b><span>no external video APIs</span></div>
+          <div class="stat"><b>Open source</b><span>AGPL-3.0-or-later</span></div>
+        </div>
+      </div>
+    </div>
+
+    <section id="features">
+      <div class="wrap">
+        <h2>Generated video, <span class="accent">from a URL</span>.</h2>
+        <p class="section-sub">PLUTUS turns a product URL into a short video clip — an AI writes the script, generates keyframes, and ffmpeg smooths them into motion.</p>
+        <div class="grid grid-3">
+          <div class="card"><span class="icon" aria-hidden="true">🎬</span><h3>AI-generated clips</h3><p>Submit a product URL and get back a video clip — script, keyframes, and motion, all generated.</p></div>
+          <div class="card"><span class="icon" aria-hidden="true">🔓</span><h3>Fully open source</h3><p>No external video APIs, no vendor lock-in. T2I keyframes via OmniRoute + ffmpeg minterpolate.</p></div>
+          <div class="card"><span class="icon" aria-hidden="true">🤖</span><h3>OmniRoute gateway</h3><p>350+ AI providers behind one OpenAI-compatible endpoint. Rotate providers in one place.</p></div>
+          <div class="card"><span class="icon" aria-hidden="true">🎥</span><h3>Keyframe + motion</h3><p>3 generated keyframes per clip, smoothed with ffmpeg minterpolate for fluid motion.</p></div>
+          <div class="card"><span class="icon" aria-hidden="true">🐳</span><h3>Docker Compose stack</h3><p>Backend, dashboard, web, optional OmniRoute — one compose up.</p></div>
+          <div class="card"><span class="icon" aria-hidden="true">📦</span><h3>Self-contained backend</h3><p>Custom backend image ships ffmpeg for in-container clip generation.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="stack">
+      <div class="wrap">
+        <h2>The stack<span class="accent">.</span></h2>
+        <p class="section-sub">A Next.js frontend, a self-hosted Convex backend with ffmpeg, and OmniRoute for AI — all containerized.</p>
+        <div class="grid grid-3">
+          <div class="card"><h3>Web UI</h3><p>Next.js static export served by Nginx. Product browsing and video playback.</p></div>
+          <div class="card"><h3>Convex backend</h3><p>Self-hosted Convex with a custom image that ships ffmpeg for in-container clip generation.</p></div>
+          <div class="card"><h3>AI gateway</h3><p>OmniRoute fronts all AI providers — scriptwriting and keyframe generation.</p></div>
+          <div class="card"><h3>Video pipeline</h3><p>T2I keyframes + ffmpeg minterpolate = smooth motion between generated frames.</p></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot-inner">
+      <span>PLUTUS — AI shopping channel. AGPL-3.0-or-later.</span>
+      <span class="foot-links">
+        <a href="https://github.com/innotelinc/plutus">GitHub</a>
+        <a href="https://github.com/innotelinc/plutus/blob/main/README.md">Readme</a>
+        <a href="https://github.com/innotelinc/innotel-platform-stack">Innotel Platform Stack</a>
+      </span>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('copy-btn').addEventListener('click', function () {
+      var cmd = 'git clone https://github.com/innotelinc/plutus.git && cd plutus && cp .env.example .env && ./setup.sh';
+      var self = this;
+      function done() {
+        self.textContent = 'copied';
+        self.classList.add('copied');
+        setTimeout(function () {
+          self.textContent = 'copy';
+          self.classList.remove('copied');
+        }, 2000);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cmd).then(done, done);
+      } else {
+        done();
+      }
+    });
+  </script>
+</body>
+</html>
