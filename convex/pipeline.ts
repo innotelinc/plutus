@@ -274,7 +274,8 @@ async function scrapeProduct(
 
 // ─── Helper: generate script via OmniRoute ────────────────────────────────────
 
-function extractJson(text: string): { clips?: unknown } {
+// Exported for unit tests (tests/script-json.test.ts).
+export function extractJson(text: string): { clips?: unknown } {
   const cleaned = text
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```\s*$/m, "")

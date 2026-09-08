@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About — PLUTUS</title>
+  <meta name="description" content="About PLUTUS, the self-hosted AI shopping channel: what it is, how the pipeline works, and where it fits in the Innotel Platform Stack.">
+  <meta property="og:title" content="About PLUTUS — the AI Shopping Channel">
+  <meta property="og:description" content="What PLUTUS is, how the URL-to-video pipeline works, and how it fits the Innotel Platform Stack.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0e13'/%3E%3Cpath d='M32 14 L32 50 M14 32 L50 32' stroke='%23f5b544' stroke-width='3' fill='none'/%3E%3Ccircle cx='32' cy='32' r='12' fill='none' stroke='%23f5b544' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="./index.html">
+        <span class="mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32">
+            <circle cx="16" cy="16" r="12" fill="none" stroke="#0a0e13" stroke-width="2.4"/>
+            <path d="M16 6 L16 26 M6 16 L26 16" stroke="#0a0e13" stroke-width="2.4"/>
+          </svg>
+        </span>
+        PLUTUS
+      </a>
+      <nav>
+        <a href="./index.html">Home</a>
+        <a href="./about.html" aria-current="page">About</a>
+        <a href="./readme.html">README</a>
+        <a class="gh" href="https://github.com/innotelinc/plutus">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="page-head">
+      <p class="kicker">About</p>
+      <h1>The AI Shopping <span class="accent">Channel</span>.</h1>
+      <p class="lede">
+        PLUTUS is a self-hosted live shopping platform. Viewers paste a product URL; an AI host
+        scripts a segment, keyframes are generated and interpolated into motion, and the clip
+        airs on a real-time broadcast schedule. Everything runs on your own hardware.
+      </p>
+    </div>
+
+    <section class="section prose">
+      <h2>What it <span class="accent">is</span></h2>
+      <ul>
+        <li><strong>A 24/7 channel</strong> — a broadcast schedule that rotates products, fills gaps, and never shows a dead screen.</li>
+        <li><strong>A submission studio</strong> — paste a URL, the pipeline scrapes the product, scripts three clips, and airs them.</li>
+        <li><strong>A self-contained video plant</strong> — keyframe generation and ffmpeg motion interpolation run inside the backend container.</li>
+        <li><strong>A viewer surface</strong> — live player with subtitles, standby screen, ticker, and chat.</li>
+      </ul>
+
+      <h2>How a segment <span class="accent">airs</span></h2>
+      <p>Every submission travels the same path, with a fallback at each AI-dependent step:</p>
+      <ol>
+        <li><strong>Scrape</strong> — the product page is fetched and title, price, and image are extracted (SSRF-guarded).</li>
+        <li><strong>Script</strong> — an OmniRoute model writes three 10-second clips: intro, feature, call-to-action. If no provider is connected, a canned studio script is used.</li>
+        <li><strong>Keyframes</strong> — an image model generates three frames per clip. Without a provider, the procedural generator draws them — the channel still airs.</li>
+        <li><strong>Motion</strong> — ffmpeg <code>minterpolate</code> turns the keyframes into a smooth 10-second clip inside the container.</li>
+        <li><strong>Air</strong> — clips are scheduled against the channel clock; a cron keeps the schedule rolling and recovers stuck items.</li>
+      </ol>
+
+      <h2>Design <span class="accent">principles</span></h2>
+      <ul>
+        <li><strong>Never a dead screen.</strong> Every AI dependency has a non-AI fallback; the schedule always has a next clip.</li>
+        <li><strong>Self-hosted first.</strong> No external video APIs, no cloud accounts, no telemetry. The AI gateway (OmniRoute) fronts whatever providers you connect.</li>
+        <li><strong>One job per platform.</strong> PLUTUS is VideoOps in the Innotel Platform Stack — it consumes identity, secrets, trust, and edge rather than re-implementing them.</li>
+        <li><strong>Operator-friendly.</strong> LAN-IP autodetection, one-command setup, <code>make help</code> as the first stop.</li>
+      </ul>
+
+      <h2>Role in the <span class="accent">Innotel Platform Stack</span></h2>
+      <p>PLUTUS is the stack's <strong>VideoOps</strong> platform. It owns the channel experience end-to-end and consumes the platform services:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Consumes</th><th>Provides</th></tr></thead>
+          <tbody>
+            <tr><td>OmniRoute (AI gateway)</td><td>Scripting + keyframe generation for the shopping channel</td></tr>
+            <tr><td>Cerulean (Trust)</td><td>DNS and TLS for <code>plutus.innotel.us</code></td></tr>
+            <tr><td>NPM Edge</td><td>Public routing for the app and dashboard hosts</td></tr>
+            <tr><td>Infisical (Secrets)</td><td>Production credentials (OmniRoute keys, admin secret)</td></tr>
+            <tr><td>Authentik (Identity)</td><td>Optional viewer SSO — planned for v0.4</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The full owns / consumes / does-not-own map lives in
+        <a href="https://github.com/innotelinc/plutus/blob/main/docs/stack.md">docs/stack.md</a>; the ecosystem
+        definition lives in the <a href="https://github.com/innotelinc/innotel-platform-stack">Innotel Platform Stack</a> repo.
+      </p>
+
+      <h2>Status</h2>
+      <p>
+        <strong>v0.2 — studio.</strong> The stack boots, the playback check passes, and submissions air
+        end-to-end with procedural fallback clips. AI-generated keyframes require an OmniRoute image
+        provider (v0.3). See the <a href="https://github.com/innotelinc/plutus/releases">releases</a> for details.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot-inner">
+      <span>PLUTUS — the AI Shopping Channel. AGPL-3.0-or-later. Part of the <a href="https://github.com/innotelinc/innotel-platform-stack">Innotel Platform Stack</a>.</span>
+      <span class="foot-links">
+        <a href="./index.html">Home</a>
+        <a href="./readme.html">README</a>
+        <a href="https://github.com/innotelinc/plutus">GitHub</a>
+        <a href="https://github.com/innotelinc/plutus/releases">Releases</a>
+      </span>
+    </div>
+    <p class="foot-credits wrap">Innotel Platform — <a href="https://innotelinc.github.io/cerulean/">Cerulean</a> (Trust) · <a href="https://innotelinc.github.io/onyx/">ONYX</a> (Storage) · <a href="https://innotelinc.github.io/magnate/">Magnate</a> (Revenue) · <a href="https://github.com/innotelinc/npm">NPM Edge</a> · <a href="https://innotelinc.github.io/monarch/">Monarch</a> (MediaOps) · <a href="https://innotelinc.github.io/zeus/">Zeus</a> (VoiceOps) · <a href="https://innotelinc.github.io/oasis/">Oasis</a> (MailOps) · <a href="https://innotelinc.github.io/signara/">Signara</a> (DocumentOps) · <a href="https://innotelinc.github.io/rizzaura/">Rizz Aura</a> (CommunityOps) · <a href="https://innotelinc.github.io/capstone/">Capstone</a> (AgentOps) · <a href="https://innotelinc.github.io/zapit/">Zapit</a> (TransferOps) · <a href="https://innotelinc.github.io/atheniq/">AthenIQ</a> (LearningOps) · <a href="https://innotelinc.github.io/distro/">Distro</a> (BuilderOps) · PLUTUS (VideoOps)</p>
+  </footer>
+</body>
+</html>
