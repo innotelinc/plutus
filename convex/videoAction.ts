@@ -24,7 +24,8 @@ const FALLBACK_WIDTH = 320;
 const FALLBACK_HEIGHT = 320;
 const FALLBACK_KEYFRAMES = 3;
 
-function generateKeyframe(width: number, height: number, idx: number): Buffer {
+// Exported for unit tests (tests/png-encoder.test.ts).
+export function generateKeyframe(width: number, height: number, idx: number): Buffer {
   const pixels = new Uint8Array(width * height * 4);
   const t = idx / (FALLBACK_KEYFRAMES - 1);
   const phase = t * 2 * Math.PI;
