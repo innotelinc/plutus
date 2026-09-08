@@ -22,7 +22,6 @@ const FFMPEG_PATH = findFfmpeg();
 
 const FALLBACK_WIDTH = 320;
 const FALLBACK_HEIGHT = 320;
-const FALLBACK_FPS = 10;
 const FALLBACK_KEYFRAMES = 3;
 
 function generateKeyframe(width: number, height: number, idx: number): Buffer {
@@ -130,7 +129,7 @@ function generateKeyframe(width: number, height: number, idx: number): Buffer {
 
 export const generateFallbackClip = action({
   args: { prompt: v.string() },
-  handler: async (_ctx, _args): Promise<string> => {
+  handler: async (): Promise<string> => {
     const clipId = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
     const tmpDir = `/tmp/fallback-${clipId}`;
     fs.mkdirSync(tmpDir, { recursive: true });
@@ -222,7 +221,7 @@ export const generateOpenVideo = action({
         "-loglevel", "error",
         mp4Filename,
       ], { stdio: "pipe" });
-    } catch (e) {
+    } catch {
       for (const kf of keyframes) { try { fs.unlinkSync(kf); } catch {} }
       throw new Error("Video interpolation failed");
     }
