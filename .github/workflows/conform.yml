@@ -10,23 +10,68 @@ on:
 
 jobs:
   check:
+    name: Conformity checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check structured-concurrency discipline
+      - name: Check LICENSE is AGPL-3.0-or-later
         run: |
-          echo "Checking concurrency discipline..."
-          # Verify no blocking calls in async contexts
-          # This is a placeholder for project-specific conformity checks
-          echo "Conformity checks passed"
-
-      - name: Check license headers
-        run: |
-          echo "Checking license headers..."
-          # Verify LICENSE file exists and is AGPL-3.0-or-later
           if [ ! -f LICENSE ]; then
             echo "::error::LICENSE file missing"
             exit 1
           fi
+          if ! grep -q "GNU AFFERO GENERAL PUBLIC LICENSE" LICENSE; then
+            echo "::error::LICENSE is not AGPL-3.0-or-later"
+            exit 1
+          fi
           echo "License check passed"
+
+      - name: Check attribution guard is wired
+        run: |
+          if [ ! -f .githooks/guard-lib ]; then
+            echo "::error::.githooks/guard-lib missing"
+            exit 1
+          fi
+          if [ ! -f .github/workflows/attribution-guard.yml ]; then
+            echo "::error::attribution-guard.yml missing"
+            exit 1
+          fi
+          echo "Attribution guard wiring: OK"
+
+      - name: Check landing page exists (when web/landing is present)
+        run: |
+          if [ -d web/landing ]; then
+            if [ ! -f web/landing/index.html ]; then
+              echo "::error::web/landing/index.html missing"
+              exit 1
+            fi
+            echo "Landing page: OK"
+          else
+            echo "::warning::web/landing not present — skip landing check"
+          fi
+
+      - name: Check docs/stack.md exists
+        run: |
+          if [ ! -f docs/stack.md ]; then
+            echo "::error::docs/stack.md missing"
+            exit 1
+          fi
+          echo "docs/stack.md: OK"
+
+      - name: Check .env.example exists
+        run: |
+          if [ ! -f .env.example ]; then
+            echo "::error::.env.example missing"
+            exit 1
+          fi
+          echo ".env.example: OK"
+
+      - name: Check attribution guard hooks are configured
+        run: |
+          HOOKS_PATH=$(git config --get core.hooksPath || echo "")
+          if [ "$HOOKS_PATH" != ".githooks" ]; then
+            echo "::warning::core.hooksPath not set to .githooks (run: git config core.hooksPath .githooks)"
+          else
+            echo "Git hooks path: OK"
+          fi
