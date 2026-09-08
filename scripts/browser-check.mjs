@@ -258,7 +258,7 @@ async function runSubmit(c, productUrl, durationSec = 120) {
   console.log("samples captured:", samples.length);
   console.log("\n-- submit box + pending timeline --");
   let lastBox = null;
-  samples.forEach((s, i) => {
+  samples.forEach((s) => {
     const t = Math.round((Date.now() - start) / 1000);
     const box = s?.submitBox || "";
     if (box !== lastBox) {

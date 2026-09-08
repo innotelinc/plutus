@@ -23,8 +23,6 @@ const OMNIROUTE_BASE_URL =
   process.env.OMNIROUTE_BASE_URL ?? "http://localhost:20128/v1";
 const OMNIROUTE_MODEL = process.env.OMNIROUTE_MODEL ?? "auto";
 const OMNIROUTE_API_KEY = process.env.OMNIROUTE_API_KEY;
-const OMNIROUTE_IMAGE_MODEL =
-  process.env.OMNIROUTE_IMAGE_MODEL ?? "auto";
 
 const IMAGE_MODEL_MISSING = "OMNIROUTE_IMAGE_MODEL_MISSING";
 
