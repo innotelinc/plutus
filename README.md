@@ -1,225 +1,160 @@
-# PixelShop — Live AI Shopping Network
+# 🛒 PLUTUS — Shop. Watch. Discover.
 
-AI-powered live shopping: submit a product URL, and an AI "studio" scripts a
-hosted segment, renders H3 video clips, and airs them on a live channel with
-subtitles, ticker, and live chat.
+**Self-hosted AI shopping channel: submit a product URL and watch an AI host present it in generated video clips — fully open-source, no external video APIs required.**
 
-## Tech Stack
+[![CI](https://github.com/innotelinc/plutus/actions/workflows/ci.yml/badge.svg)](https://github.com/innotelinc/plutus/actions/workflows/ci.yml)
+[![Conformity](https://github.com/innotelinc/plutus/actions/workflows/conform.yml/badge.svg)](https://github.com/innotelinc/plutus/actions/workflows/conform.yml)
+[![Release](https://github.com/innotelinc/plutus/actions/workflows/release.yml/badge.svg)](https://github.com/innotelinc/plutus/actions/workflows/release.yml)
+[![Pages](https://github.com/innotelinc/plutus/actions/workflows/pages.yml/badge.svg)](https://github.com/innotelinc/plutus/actions/workflows/pages.yml)
 
-| Concern              | Technology                                                                                             |
-| -------------------- | ------------------------------------------------------------------------------------------------------ |
-| Frontend             | **Next.js 16** (App Router, static export) + **React 19** + Tailwind CSS v4                            |
-| Database / backend   | **Convex, self-hosted** ([convex-backend](https://github.com/get-convex/convex-backend/blob/main/self-hosted/README.md)) — DB, real-time subscriptions, cron jobs |
-| H3 video generation  | **Open Generative AI** ([open-generative-ai](https://github.com/anil-matcha/open-generative-ai)) MiniMax H3 flow (MuAPI client, `minimax-h3-open-text-to-video`). When MuAPI is unavailable, the pipeline generates fallback clips locally with ffmpeg. |
-| Product scripting    | **OpenClaw** ([openclaw](https://github.com/openclaw/openclaw)) using **OpenClaude** ([openclaude](https://github.com/Gitlawb/openclaude)), integrated through **OmniRoute** ([OmniRoute](https://github.com/diegosouzapw/OmniRoute), the OpenAI-compatible gateway) |
+</div>
 
-This replaces the original hackathon stack (Convex *cloud* + fal.ai + OpenAI GPT).
+---
 
-### How the AI services fit together
+## Why PLUTUS
 
-```
-                     ┌────────────────────────────────────────────────┐
-  Browser ─────────▶ │ web (nginx, static Next.js export)             │
-                     └───────────────────────┬────────────────────────┘
-                                             │ Convex sync (port 3210)
-                     ┌───────────────────────▼────────────────────────┐
-                     │ convex backend + dashboard (docker compose)    │
-                     │   • channel/player state, schedule, chat       │
-                     │   • runPipeline action (convex/pipeline.ts)    │
-                     └───────┬───────────────────────────┬────────────┘
-                             │ (1) product scripts        │ (2) H3 clips
-                     ┌───────▼────────────┐      ┌────────▼─────────────┐
-                     │ OmniRoute gateway  │      │ MuAPI                │
-                     │ :20128/v1          │      │ api.muapi.ai         │
-                     │ (OpenAI-compatible)│      │ (what open-generative│
-                     └───────┬────────────┘      │  -ai speaks)         │
-                             │                    └────────┬─────────────┘
-              ┌──────────────┼──────────────┐              │
-              ▼              ▼              ▼              ▼
-      OpenClaude CLI   OpenClaw gateway   any provider  MiniMax H3
-      (script authoring)(assistant host)  you connect   (768p video)
+| Problem | PLUTUS answer |
+| --- | --- |
+| AI video APIs are expensive and closed | Fully open-source: T2I keyframes + ffmpeg minterpolate, no external video API |
+| Shopping channels require production studios | AI-generated video clips from a product URL alone |
+| Each service has its own AI integration | OmniRoute fronts 350+ providers for scripting, image gen, and more |
 
-                     (3) fallback clips (when MuAPI is unavailable)
-                     ┌────────────────────────────────────────────────┐
-                     │ backend container                               │
-                     │   • ffmpeg + PNG frame generation               │
-                     │   • clips served via nginx /fallback-clips/     │
-                     └────────────────────────────────────────────────┘
-```
+> **About PLUTUS** — a self-hosted AI shopping channel where viewers submit product
+> URLs and an AI host presents them in generated video clips. OmniRoute handles
+> scriptwriting and keyframe generation; ffmpeg animates between keyframes. No
+> external video APIs, no vendor lock-in, no cloud account required.
 
-- **Product scripting** — `convex/pipeline.ts` POSTs the product + a prompt to
-  OmniRoute's OpenAI-compatible `/v1/chat/completions` endpoint. OmniRoute
-  routes the request to whichever provider you connected in its dashboard.
-  OpenClaude (agent CLI) and OpenClaw (assistant gateway) are configured
-  against that *same* endpoint, so scripts written by the pipeline and scripts
-  authored interactively come from identical models.
-- **H3 video generation** — Open Generative AI is a UI client of MuAPI; this
-  pipeline reuses its exact submit-and-poll flow (`/api/v1/{model}` →
-  `/api/v1/predictions/{id}/result`) with the MiniMax H3 model from its
-  catalog (`minimax-h3-open-text-to-video`, 768p / 16:9 / 10s).
+---
 
-## Getting Started (self-hosted)
+## Services
 
-Prereqs: Docker, and [bun](https://bun.sh) (or npm) + Node 20+.
+Primary domain: `plutus.innotel.us` (configure in `.env`)
 
-### 1. Start the Convex backend + dashboard
+| Service | URL | Backed by |
+|---------|-----|-----------|
+| Web UI | `http://192.168.1.10:3000` | Next.js static export (Nginx) |
+| Convex backend | `http://192.168.1.10:3210` | Self-hosted Convex |
+| Convex site proxy | `http://192.168.1.10:3211` | Convex HTTP actions |
+| Dashboard | `http://192.168.1.10:6791` | Convex dashboard |
+| OmniRoute (AI gateway) | `http://192.168.1.10:20128` | OmniRoute container |
 
-```bash
-docker compose up -d backend dashboard
-docker compose exec backend ./generate_admin_key.sh   # copy the admin key
-```
+All services are containerized (Docker); see `docker-compose.yml`.
 
-The backend listens on `http://127.0.0.1:3210` (sync + mutations)
-and `http://127.0.0.1:3211` (HTTP actions / file proxy); the dashboard is at
-`http://localhost:6791`.
+## Platform stack
 
-### 2. Configure the project
+- **AI gateway:** OmniRoute — self-hosted OpenAI-compatible gateway fronting 350+
+  providers. Used for scriptwriting (`chat/completions`) and keyframe generation
+  (`images/generations`). Configure via `OMNIROUTE_*` env vars.
+- **Video generation:** T2I keyframes via OmniRoute image model + ffmpeg
+  `minterpolate` for motion interpolation. Fully open-source, self-hosted.
+- **Reverse proxy:** Nginx serving the Next.js static export + proxying fallback
+  clips. Configured via `deploy/nginx.conf`.
+- **Runtime:** every service is containerized (Docker); the backend uses a custom
+  image (`deploy/backend.Dockerfile`) with ffmpeg for in-container clip generation.
+- **CI/CD:** GitHub Actions for lint, build, release, and GitHub Pages deployment
+  of the static export.
+
+## Key properties
+
+- 🎬 AI-generated video clips from a product URL — no studio needed
+- 🔓 Fully open-source: no external video APIs, no vendor lock-in
+- 🎥 T2I keyframes + ffmpeg minterpolate — smooth motion between 3 generated frames
+- 🤖 OmniRoute: 350+ AI providers for scripting and image generation
+- 🐳 Docker Compose stack: backend, dashboard, web, optional OmniRoute
+- 🎞️ Custom backend image with ffmpeg for in-container clip generation
+
+## Quick start
 
 ```bash
-cp .env.example .env.local
-# edit .env.local: set CONVEX_SELF_HOSTED_ADMIN_KEY to the key from step 1
+cp .env.example .env        # edit: CONVEX_SELF_HOSTED_ADMIN_KEY
+./scripts/get-admin-key.sh  # auto-fetch admin key from backend
+make push                   # push functions + seed demo data
+make build                  # build static export
+docker compose up -d        # start the stack
 ```
 
-### 3. Install, push the backend, run the site
+`setup.sh` is idempotent: safe to re-run; it copies `.env.example` if needed
+and installs dependencies.
+
+### AI keys
+
+The pipeline uses OmniRoute for scripting and image generation. Configure via
+environment variables:
 
 ```bash
-bun install
-bun run convex:dev          # pushes functions/crons to the self-hosted backend
-bun run db:seed             # optional: airs 3 sample clips so there's something on TV
-bun run dev                 # frontend on http://localhost:3000
+# OmniRoute gateway URL (default: http://localhost:20128/v1)
+OMNIROUTE_BASE_URL=http://192.168.1.10:20128/v1
+
+# Model for scripting (default: "auto" — OmniRoute picks best provider)
+OMNIROUTE_MODEL=auto
+
+# Model for image generation / keyframes (default: "auto")
+OMNIROUTE_IMAGE_MODEL=auto
+
+# Optional API key if your OmniRoute instance requires one
+OMNIROUTE_API_KEY=''
 ```
 
-Or run the whole stack (backend + dashboard + nginx web on :3000) with:
+Connect a provider in the OmniRoute dashboard (`http://192.168.1.10:20128`)
+to enable scripting and image generation.
 
-```bash
-bun run build                # produce out/ (static export)
-docker compose up -d
-```
+### Video pipeline
 
-> The `web` service serves the host-built `out/` directory from nginx (Next.js
-> has no server runtime in this project). For a fully containerized build
-> (e.g. CI), use `deploy/web.Dockerfile` instead.
->
-> Local dev talks to the backend at `http://127.0.0.1:3210` (the default in
-> `src/components/ConvexClientProvider.tsx`). Point `NEXT_PUBLIC_CONVEX_URL`
-> elsewhere if your backend is remote.
->
-> **Accessing from other machines:** the frontend bakes the backend URL into the
-> static bundle at build time. To access the site from other machines on your LAN,
-> set `NEXT_PUBLIC_CONVEX_URL` and `NEXT_PUBLIC_CONVEX_SITE_URL` to the server's
-> IP when building, then rebuild and restart the web container:
-> ```bash
-> NEXT_PUBLIC_CONVEX_URL=http://192.168.1.10:3210 \
-> NEXT_PUBLIC_CONVEX_SITE_URL=http://192.168.1.10:3211 \
->   bun run build
-> docker compose restart web
-> ```
-> Edit `.env` to make this the default for your deployment.
+The pipeline generates 3 keyframes per clip via an image model through OmniRoute,
+then uses ffmpeg's `minterpolate` filter to produce smooth motion between them.
+When image generation fails, the fallback action generates 3 procedural keyframes
+and animates them with ffmpeg (same approach, no external API needed).
 
-## Verifying the demo in a real browser
+## Status
 
-`scripts/browser-check.mjs` drives a headless Chromium over the DevTools
-protocol (no dependencies) and asserts the site actually works:
+**Phase: v0.1 — self-hosted demo.** The stack boots, the playback test passes
+(5 title transitions, no errors, live badge), and submissions trigger the
+pipeline. Video generation requires an OmniRoute image model to be connected.
 
-```bash
-bun run verify:demo     # demo clips play end-to-end (titles change, video advances)
-bun run verify:submit <product-url>   # submit a product and watch the pipeline
-```
-
-It needs a `chrome-headless-shell` binary (set `CHROME_PATH` if yours is not
-the default Playwright cache path) and the stack running on
-`http://127.0.0.1:3000` (override with `PIXELSHOP_URL`). Exits non-zero on
-failure, so it can run in CI.
-
-## AI keys (optional but recommended)
-
-Without any keys the site still works: product scripts fall back to canned
-clips, and demo content is one command away (`bun run db:seed`).
-
-- **MUAPI_API_KEY** — enables real H3 video generation via the Open Generative
-  AI flow. Set it as a Convex env var once the backend is running:
-  `npx convex env set MUAPI_API_KEY <key>`. Without it, items are scripted and
-  then fail with a friendly "set MUAPI_API_KEY" message.
-- **OmniRoute** — start the gateway (`docker compose -f
-  docker-compose.agents.yml up -d`), open `http://localhost:20128`, and
-  connect a provider (Claude, OpenAI, free tiers, local models…). Then set
-  `OMNIROUTE_BASE_URL` / `OMNIROUTE_MODEL` in `.env.local` for the pipeline.
-  While OmniRoute is offline, scripting gracefully falls back to canned clips.
-> The pipeline action runs inside the Convex backend container, so when that
-> backend is containerized (`docker compose up -d backend`), point it at the
-> host gateway (the compose backend exposes `host.docker.internal` for this):
->
-> ```bash
-> npx convex env set OMNIROUTE_BASE_URL http://host.docker.internal:20128/v1
-> ```
->
-> All AI keys are set the same way (per-deployment Convex env vars, which the
-> self-hosted backend injects into functions): `npx convex env set MUAPI_API_KEY
-> <key>`, `npx convex env set OMNIROUTE_MODEL auto`, etc.
->
-
-
-## Authoring scripts with OpenClaude / OpenClaw
-
-The scripting stack is operator tooling that talks to the same OmniRoute
-gateway the pipeline uses:
-
-```bash
-# OmniRoute → OpenClaude (agent CLI for writing/editing segment scripts)
-export OPENAI_BASE_URL=http://localhost:20128/v1
-export OPENAI_MODEL=auto          # or claude-sonnet-4-5, openai/gpt-4o-mini, ...
-npx -y @gitlawb/openclaude
-
-# OpenClaw (assistant gateway) — add OmniRoute as a model provider under
-# Settings → Models in the Control UI, or configure it in the gateway config.
-openclaw gateway status
-```
-
-## Environment variables
-
-See [`.env.example`](.env.example) for the full annotated list:
-`CONVEX_SELF_HOSTED_URL`, `CONVEX_SELF_HOSTED_ADMIN_KEY`,
-`NEXT_PUBLIC_CONVEX_URL`, `NEXT_PUBLIC_CONVEX_SITE_URL`,
-`MUAPI_API_KEY`, `MUAPI_BASE_URL`,
-`OMNIROUTE_BASE_URL`, `OMNIROUTE_API_KEY`, `OMNIROUTE_MODEL`, `ADMIN_SECRET`.
-
-### Fallback clips
-
-When MuAPI is unavailable or the key is invalid, the pipeline generates short
-fallback video clips locally using ffmpeg + procedurally-generated PNG frames.
-These are written to a shared Docker volume (`fallback-clips`) and served by
-nginx at `/fallback-clips/<id>.mp4`. The volume is mounted into both the
-backend (write) and web (read) containers. No additional setup is required —
-ffmpeg-static and gif-encoder-2 are installed in the backend container by the
-pipeline's initialization.
-
-If you run the backend outside of docker compose (e.g. bare metal), install
-ffmpeg-static globally in the backend environment:
-```bash
-npm install -g ffmpeg-static
-```
-
-## How it works
-
-1. A viewer submits a product URL (SSRF-checked + rate-limited server side).
-2. The `runPipeline` Convex action scrapes title/price/image with cheerio.
-3. It asks OmniRoute for a 3-clip script (intro → features → call-to-action).
-4. Each clip is rendered as H3 video through the MuAPI/open-generative-ai flow
-   and inserted into the channel schedule with real timestamps.
-5. The frontend subscribes to the channel in real time: a `<video>` player
-   switches clips on `ended`, shows subtitles + product info, and a cron keeps
-   the rotation airing.
-
-## Layout
+## Repo layout
 
 ```
-convex/            backend functions (schema, channel, pipeline, crons,
-                   fallbackAction)
-src/app/           Next.js App Router frontend
-deploy/            web Dockerfile + nginx config + deploy README
-docker-compose.yml            convex backend + dashboard + web
-docker-compose.agents.yml     OmniRoute gateway (scripting)
-.env               default env vars (edit for your network)
-.env.example       annotated template for .env.local
+convex/          Convex functions (queries, mutations, actions)
+  _generated/    Auto-generated API types (from `npx convex dev`)
+  channel.ts     Channel queries + mutations
+  pipeline.ts    Pipeline action (scripting + video generation)
+  videoAction.ts Node.js action (keyframe gen + ffmpeg)
+  schema.ts      Database schema
+deploy/          Deployment config
+  backend.Dockerfile  Custom Convex backend image (with ffmpeg)
+  check-admin-key.sh   Admin key verification script
+  nginx.conf      Nginx config (static export + fallback clips proxy)
+  web.Dockerfile  Web container Dockerfile (optional)
+  README.md       Deployment docs
+docker-compose.yml       Main stack (backend, dashboard, web)
+docker-compose.prod.yml  Production overlay
+docker-compose.agents.yml OmniRoute agent stack
+scripts/         Utility scripts
+  browser-check.mjs    Headless browser verification (play + submit tests)
+  get-admin-key.sh     Auto-fetch admin key from backend
+  push-and-seed.sh     Generate key + push + seed in one shot
+src/             Next.js frontend
+  app/           App router pages
+  components/    React components
+LICENSE          AGPL-3.0-or-later
+Makefile         Convenience targets
+setup.sh         One-command setup
 ```
-# plutus
+
+## License
+
+PLUTUS is licensed under **AGPL-3.0-or-later** — see [LICENSE](LICENSE) for details.
+
+## Contributing
+
+1. Fork the repo
+2. Create a feature branch
+3. Make your changes
+4. Run `make test` to verify
+5. Submit a pull request
+
+## Documentation
+
+- [Convex self-hosted guide](https://github.com/get-convex/convex-backend/blob/main/self-hosted/README.md)
+- [OmniRoute](https://github.com/diegosouzapw/OmniRoute)
+- [ffmpeg minterpolate docs](https://ffmpeg.org/ffmpeg-filters.html#minterpolate)
