@@ -1,0 +1,129 @@
+# ─── PixelShop self-hosted stack ────────────────────────────────────────────
+#
+#   docker compose up -d          # backend + dashboard + web
+#
+# Services:
+#   backend   — self-hosted Convex backend (database + functions) on :3210
+#               (http actions/site proxy on :3211)
+#   dashboard — Convex dashboard on :6791
+#   web       — PixelShop frontend (Next.js static export) on :3000
+#
+# Infra based on the official self-hosted guide:
+#   https://github.com/get-convex/convex-backend/blob/main/self-hosted/README.md
+
+services:
+  backend:
+    # Pin to a specific release with :<REV> if you want reproducible deploys.
+    # To use a custom build with ffmpeg, see deploy/backend.Dockerfile:
+    #   build:
+    #     context: .
+    #     dockerfile: deploy/backend.Dockerfile
+    #   # image: ghcr.io/get-convex/convex-backend:latest
+    build:
+      context: .
+      dockerfile: deploy/backend.Dockerfile
+    image: gliz-backend:latest
+    stop_grace_period: 10s
+    stop_signal: SIGINT
+    ports:
+      - "${PORT:-3210}:3210"
+      - "${SITE_PROXY_PORT:-3211}:3211"
+    volumes:
+      - data:/convex/data
+      - fallback-clips:/fallback-clips
+      - ./deploy/check-admin-key.sh:/scripts/check-admin-key.sh:ro
+      - ./.env.local:/app/.env.local:ro
+    environment:
+      - V8_ACTION_USER_TIMEOUT_SECS
+      - NODE_ACTION_USER_TIMEOUT_SECS
+      - APPLICATION_MAX_CONCURRENT_MUTATIONS=${APPLICATION_MAX_CONCURRENT_MUTATIONS:-16}
+      - APPLICATION_MAX_CONCURRENT_NODE_ACTIONS=${APPLICATION_MAX_CONCURRENT_NODE_ACTIONS:-16}
+      - APPLICATION_MAX_CONCURRENT_QUERIES=${APPLICATION_MAX_CONCURRENT_QUERIES:-16}
+      - APPLICATION_MAX_CONCURRENT_V8_ACTIONS=${APPLICATION_MAX_CONCURRENT_V8_ACTIONS:-16}
+      - AWS_ACCESS_KEY_ID
+      - AWS_REGION
+      - AWS_S3_DISABLE_CHECKSUMS
+      - AWS_S3_DISABLE_SSE
+      - AWS_S3_FORCE_PATH_STYLE
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
+      - CONVEX_CLOUD_ORIGIN=${CONVEX_CLOUD_ORIGIN:-http://192.168.1.10:${PORT:-3210}}
+      - CONVEX_RELEASE_VERSION_DEV
+      - CONVEX_SITE_ORIGIN=${CONVEX_SITE_ORIGIN:-http://192.168.1.10:${SITE_PROXY_PORT:-3211}}
+      - DATABASE_URL
+      - DISABLE_BEACON
+      - DISABLE_METRICS_ENDPOINT=${DISABLE_METRICS_ENDPOINT:-true}
+      - DOCUMENT_RETENTION_DELAY=${DOCUMENT_RETENTION_DELAY:-172800}
+      - DO_NOT_REQUIRE_SSL
+      - ADMIN_SECRET=${ADMIN_SECRET:-gliz-admin-secret-change-in-production}
+      - HTTP_SERVER_TIMEOUT_SECONDS
+      - INSTANCE_NAME
+      - INSTANCE_SECRET
+      - MYSQL_URL
+      - POSTGRES_URL
+      - REDACT_LOGS_TO_CLIENT
+      - RUST_BACKTRACE
+      - RUST_LOG=${RUST_LOG:-info}
+      - S3_ENDPOINT_URL
+      - S3_STORAGE_EXPORTS_BUCKET
+      - S3_STORAGE_FILES_BUCKET
+      - S3_STORAGE_MODULES_BUCKET
+      - S3_STORAGE_SEARCH_BUCKET
+      - S3_STORAGE_SNAPSHOT_IMPORTS_BUCKET
+    # The pipeline action can reach the host's OmniRoute gateway through
+    # host.docker.internal (the default OMNIROUTE_BASE_URL=http://localhost:20128/v1
+    # would point at the container itself). Set the gateway URL per-deployment
+    # with `npx convex env set OMNIROUTE_BASE_URL http://host.docker.internal:20128/v1`
+    # (see README "AI keys").
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: curl -f http://localhost:3210/version
+      interval: 5s
+      start_period: 10s
+
+  dashboard:
+    image: ghcr.io/get-convex/convex-dashboard:latest
+    stop_grace_period: 10s
+    stop_signal: SIGINT
+    ports:
+      - "${DASHBOARD_PORT:-6791}:6791"
+    environment:
+      - NEXT_PUBLIC_DEPLOYMENT_URL=${NEXT_PUBLIC_DEPLOYMENT_URL:-http://192.168.1.10:${PORT:-3210}}
+      - NEXT_PUBLIC_LOAD_MONACO_INTERNALLY
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  admin-key-check:
+    image: busybox
+    container_name: gliz-admin-key-check
+    user: "0"
+    volumes:
+      - ./deploy/check-admin-key.sh:/scripts/check-admin-key.sh:ro
+      - data:/convex/data:ro
+      - ./.env.local:/app/.env.local:ro
+    entrypoint: ["sh", "/scripts/check-admin-key.sh"]
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    # Serves the Next.js static export (out/), which you build on the host with
+    # `bun run build` (Next has no server runtime in this project).
+    # For a fully containerized build see deploy/web.Dockerfile.
+    image: nginx:1.27-alpine
+    ports:
+      - "${WEB_PORT:-3000}:80"
+    volumes:
+      - ./out:/usr/share/nginx/html:ro
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - fallback-clips:/fallback-clips:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  data:
+  fallback-clips:
