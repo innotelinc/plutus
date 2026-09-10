@@ -1,24 +1,34 @@
-#!/bin/sh
-# Pre-commit hook for plutus
-# Runs basic checks before allowing a commit.
+#!/usr/bin/env bash
+# ═══════════════════════════════════════════════════════════════════════════
+# pre-commit — block attribution from landing in committed FILES.
+#
+# The message/trailer is enforced by the sibling commit-msg hook (the message
+# isn't written until later); this hook scans the staged diff so any
+# attribution added to docs, READMEs, credits, or comments in the tree itself
+# is rejected before the commit can be created. Policy: only Darnel Hunter
+# <dhunter@innotel.us> may ever be credited.
+#
+# Install (enables the guard locally):
+#     git config core.hooksPath .githooks
+# setup.sh on a fresh install already does this.
+# ═══════════════════════════════════════════════════════════
+set -uo pipefail
 
-set -e
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=.githooks/guard-lib
+# shellcheck disable=SC1091
+source "$HOOK_DIR/guard-lib"
 
-echo "Running pre-commit checks..."
+say() { printf 'guard: %s\n' "$*"; }
 
-# Check for accidentally committed secrets
-if git diff --cached --name-only | grep -qE '\.env$|\.env\.local$|\.pem$|credentials'; then
-    echo "ERROR: Attempting to commit sensitive files"
-    echo "Staged files:"
-    git diff --cached --name-only
+# Scan only the ADDED lines of the staged diff (never the unchanged context).
+# Strip the '+' diff marker after filtering — the trailer rule is anchored (^),
+# so a leading '+' would hide a foreign credit line from the scan.
+added="$(git diff --cached --no-color -U0 2>/dev/null | grep '^+' | grep -v '^+++' | sed 's/^+//' || true)"
+if [ -n "$added" ]; then
+  if ! printf '%s\n' "$added" | guard_check_stream; then
+    say "commit blocked: the staged changes introduce attribution to someone other than Darnel Hunter <dhunter@innotel.us>."
     exit 1
+  fi
 fi
-
-# Check for console.log left in source files
-if git diff --cached --name-only | grep -E '\.tsx?$' | while read f; do
-    git show ":$f" | grep -n 'console\.log' | grep -v '// console.log'
-done | grep -q .; then
-    echo "WARNING: console.log found in staged changes"
-fi
-
-echo "Pre-commit checks passed"
+exit 0
