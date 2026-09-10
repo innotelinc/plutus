@@ -11,6 +11,9 @@
 # The actual patterns live in .githooks/guard-lib (shared with the local
 # commit-msg/pre-commit hooks), so this workflow just sources that file and
 # feeds it the streams above. It never inspects author/committer identity.
+# A self-test step first proves the guard still rejects and allows what it
+# must — including that the real pre-commit hook fires — so a silently
+# broken guard fails CI instead of passing everything.
 # ═══════════════════════════════════════════════════════════════════════════
 
 name: Attribution guard
@@ -32,6 +35,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Guard self-test (the guard must still fire)
+        run: |
+          source .githooks/guard-lib
+          guard_selftest --self-commit
+          echo "guard self-test passed"
+
       - name: Check commit messages, PR text, and file changes
         env:
           BASE_SHA: ${{ github.event.before }}
@@ -40,81 +49,83 @@ jobs:
           PR_HEAD: ${{ github.event.pull_request.head.sha }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
-          GH_TOKEN: ${{ github.token }}
-
+          REF_TYPE: ${{ github.ref_type }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          source .githooks/guard-lib
 
-          # ── helpers ────────────────────────────────────────────────────────
-          reject() {
-            echo "::error::$1"
-            EXIT_CODE=1
-          }
+          fail=0
 
-          # ── source the shared guard patterns ────────────────────────────────
-          # (.githooks/guard-lib is committed to this repo verbatim from
-          #  innotel-platform-stack — see docs/standard.md §5)
-          if [ ! -f .githooks/guard-lib ]; then
-            echo "::warning::.githooks/guard-lib missing — skipping attribution check"
+          # ── Tag pushes introduce no new history ───────────────────────
+          # A tag push carries an all-zero "before" SHA (like a brand-new
+          # repo), but the tag itself adds only the tagged commit. Scan the
+          # tag's own commit message + diff instead of the full history, so
+          # historical trailers never block a release.
+          if [ "${REF_TYPE:-}" = "tag" ]; then
+            git log -1 --format=%B "${GITHUB_REF_NAME}" | guard_check_stream || fail=1
+            added="$(git show --format= --no-color -U0 "${GITHUB_REF_NAME}" -- . 2>/dev/null | grep '^+' | grep -v '^+++' | sed 's/^+//' || true)"
+            if [ -n "$added" ]; then
+              printf '%s\n' "$added" | guard_check_stream || fail=1
+            fi
+            if [ "$fail" -ne 0 ]; then
+              echo "::error::Attribution guard failed — only Darnel Hunter <dhunter@innotel.us> may be credited."
+              exit 1
+            fi
+            echo "attribution guard: clean"
             exit 0
           fi
-          # shellcheck disable=SC1091
-          . .githooks/guard-lib
 
-          EXIT_CODE=0
-
-          # A brand-new ref (branch/tag creation) reports all-zeros as the
-          # base — there is no previous revision to diff against, and git
-          # treats 000..0..HEAD as an invalid range.
-          ZERO_SHA=0000000000000000000000000000000000000000
-          HAS_BASE=0
-          if [ -n "${BASE_SHA:-}" ] && [ "${BASE_SHA}" != "${HEAD_SHA:-}" ] && [ "${BASE_SHA}" != "${ZERO_SHA}" ]; then
-            HAS_BASE=1
+          # ── Determine the commit range to scan ─────────────────────────
+          if [ "${GITHUB_EVENT_NAME:-}" = "pull_request" ]; then
+            base="${PR_BASE:-}"; head="${PR_HEAD:-}"
+          else
+            base="${BASE_SHA:-}"; head="${HEAD_SHA:-}"
+          fi
+          # A brand-new branch/repo pushes with an all-zero "before" SHA —
+          # in that case scan the full reachable history instead.
+          if [ -n "$base" ] && printf '%s' "$base" | grep -Eq '^0+$'; then
+            base=""
           fi
 
-          # ── commit messages (push) ──────────────────────────────────────────
-          if [ "$HAS_BASE" = "1" ]; then
-            git log --format='%H %s' "${BASE_SHA}..${HEAD_SHA}" | cut -d' ' -f2- | \
-              while IFS= read -r msg; do
-                [ -z "$msg" ] && continue
-                # guard-lib provides check_commit_msg <msg> -> 0|1
-                if check_commit_msg "$msg"; then
-                  reject "Commit message contains attribution: $msg"
-                fi
-              done
-          fi
-
-          # ── PR title + body ────────────────────────────────────────────────
-          if [ -n "${PR_TITLE:-}" ]; then
-            if check_commit_msg "$PR_TITLE"; then
-              reject "PR title contains attribution: $PR_TITLE"
+          # ── 1. Commit messages in the range ───────────────────────────
+          if [ -n "$base" ] && [ -n "$head" ]; then
+            if git rev-parse --verify --quiet "${base}^{commit}" >/dev/null 2>&1; then
+              git log --format=%B "${base}..${head}" | guard_check_stream || fail=1
+            else
+              # A force-push left the "before" SHA unreachable (history was
+              # rewritten), so the range can't be resolved. Scan the pushed
+              # head commit only, mirroring the tag-push path.
+              git log -1 --format=%B "$head" | guard_check_stream || fail=1
             fi
-          fi
-          if [ -n "${PR_BODY:-}" ]; then
-            while IFS= read -r line; do
-              [ -z "$line" ] && continue
-              if check_commit_msg "$line"; then
-                reject "PR body contains attribution: $line"
-              fi
-            done <<< "$PR_BODY"
+          else
+            git log --format=%B | guard_check_stream || fail=1
           fi
 
-          # ── lines added to files ───────────────────────────────────────────
-          if [ "$HAS_BASE" = "1" ]; then
-            git diff --diff-filter=AM --unified=0 "${BASE_SHA}".."${HEAD_SHA}" | \
-              grep '^+' | grep -v '^+++' | \
-              while IFS= read -r line; do
-                [ -z "$line" ] && continue
-                # strip the leading +
-                str="${line#+}"
-                if check_commit_msg "$str"; then
-                  reject "Added line contains attribution: $str"
-                fi
-              done
+          # ── 2. PR title + body (content check only) ───────────────────
+          if [ "${GITHUB_EVENT_NAME:-}" = "pull_request" ]; then
+            { printf '%s\n' "${PR_TITLE:-}"; printf '%s\n' "${PR_BODY:-}"; } | guard_check_stream || fail=1
           fi
 
-          if [ "$EXIT_CODE" -ne 0 ]; then
-            echo "::error::Attribution guard failed — see errors above."
+          # ── 3. Lines added to files in the push/PR ────────────────────
+          # The '+' diff marker is stripped after filtering: the trailer rule
+          # is anchored (^), so a leading '+' would hide foreign credit lines
+          # from the scan.
+          added=""
+          if [ -n "$base" ] && [ -n "$head" ]; then
+            if git rev-parse --verify --quiet "${base}^{commit}" >/dev/null 2>&1; then
+              added="$(git diff --no-color -U0 "$base" "$head" -- . 2>/dev/null | grep '^+' | grep -v '^+++' | sed 's/^+//' || true)"
+            else
+              added="$(git show --format= --no-color -U0 "$head" -- . 2>/dev/null | grep '^+' | grep -v '^+++' | sed 's/^+//' || true)"
+            fi
+          else
+            added="$(git log -p --format= --no-color HEAD 2>/dev/null | grep '^+' | grep -v '^+++' | sed 's/^+//' || true)"
+          fi
+          if [ -n "$added" ]; then
+            printf '%s\n' "$added" | guard_check_stream || fail=1
+          fi
+
+          if [ "$fail" -ne 0 ]; then
+            echo "::error::Attribution guard failed — only Darnel Hunter <dhunter@innotel.us> may be credited."
             exit 1
           fi
-          echo "Attribution guard: passed."
+          echo "attribution guard: clean"
