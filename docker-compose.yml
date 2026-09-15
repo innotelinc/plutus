@@ -14,6 +14,10 @@
 # Infra based on the official self-hosted guide:
 #   https://github.com/get-convex/convex-backend/blob/main/self-hosted/README.md
 
+# Project name is pinned so container/volume names never depend on where this
+# repo is checked out (the mesh puts it in 3-media/plutus).
+name: plutus
+
 services:
   backend:
     # Pin to a specific release with :<REV> if you want reproducible deploys.

@@ -123,12 +123,20 @@ def main() -> int:
     token = args.token or env.get("AUTHENTIK_TOKEN") or env.get("AUTHENTIK_BOOTSTRAP_TOKEN", "")
 
     if not token:
-        # Fall back to the Cerulean repo's own .env (bootstrap token).
-        cerulean_dir = Path(args.cerulean_dir or REPO.parent / "cerulean-dns-platform")
+        # Fall back to the Cerulean repo's own .env (bootstrap token). Cerulean
+        # is a Group-1 repo, so look for it under the mesh group dir first and
+        # fall back to a flat sibling checkout.
+        candidates = [
+            REPO.parent.parent / "1-primary" / "cerulean",   # mesh layout
+            REPO.parent / "cerulean",                        # flat siblings
+        ]
+        default_cerulean = next((c for c in candidates if (c / ".env").is_file()),
+                                candidates[0])
+        cerulean_dir = Path(args.cerulean_dir) if args.cerulean_dir else default_cerulean
         cerulean_env = load_env(cerulean_dir / ".env")
         token = cerulean_env.get("AUTHENTIK_BOOTSTRAP_TOKEN", "")
     if not token:
-        print("FAIL AUTHENTIK_BOOTSTRAP_TOKEN missing — set --token or CERULEAN_DIR, then re-run", file=sys.stderr)
+        print("FAIL AUTHENTIK_BOOTSTRAP_TOKEN missing — set --token or --cerulean-dir, then re-run", file=sys.stderr)
         return 1
 
     api = AkApi(args.auth_host, token)
