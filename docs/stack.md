@@ -24,7 +24,12 @@ backend container) handles motion interpolation between keyframes. No external v
 
 **Does not own:**
 - Identity / SSO — that's Cerulean's Authentik. PLUTUS uses it if SSO is configured.
-- Secrets — Infisical is the canonical store; `.env` is derived/local-only.
+- Secrets — **Cerulean Vault** (HashiCorp Vault, KV v2, hosted by Cerulean) is
+  the canonical store; `.env` is local-only, carries the resolved values, and is
+  never the source of truth. Move plaintext values in with
+  `scripts/vault-migrate.py` (the shared migrator every stack mirrors), and treat
+  a `vault://` reference left in `.env` as a deployment error — nothing in this
+  stack resolves one at runtime.
 - Billing — not in scope for PLUTUS currently.
 
 ## Service map
