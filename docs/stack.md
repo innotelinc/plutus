@@ -41,7 +41,7 @@ backend container) handles motion interpolation between keyframes. No external v
 ## In the ecosystem
 
 - **Identity:** Cerulean Authentik (optional SSO).
-- **Secrets:** Infisical (SecretOps); `.env` is derived/local-only.
+- **Secrets:** Cerulean Vault (SecretOps); `.env` carries `vault://` references (local-only).
 - **Trust:** Cerulean DNS + TLS — `plutus.innotel.us` is a Cerulean-managed host.
 - **Edge:** NPM Edge serves the public host; Cerulean provisions the proxy host and attaches
   the `*.plutus.innotel.us` wildcard cert.
