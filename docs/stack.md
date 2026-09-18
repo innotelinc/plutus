@@ -17,7 +17,8 @@ backend container) handles motion interpolation between keyframes. No external v
 
 **Consumes:**
 - **OmniRoute** — AI gateway for scriptwriting (`chat/completions`) and keyframe generation
-  (`images/generations`). Reachable at `OMNIROUTE_BASE_URL` (default: the OmniRoute host).
+  (`images/generations`). Reachable at `OMNIROUTE_BASE_URL` (`http://192.168.1.46:20129/v1` —
+  the SSO proxy in front of the gateway, whose own `20128` is not on the LAN).
 - **Cerulean** — identity (Authentik SSO), DNS, and TLS for `plutus.innotel.us`. PLUTUS
   does not manage its own certificates or DNS records.
 - **NPM Edge** — public routing/TLS for `plutus.innotel.us` (operated by Cerulean).
