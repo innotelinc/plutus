@@ -52,7 +52,7 @@ network reach the stack; `127.0.0.1` works for localhost-only access.
 | Convex backend | `http://$PLUTUS_HOST:3210` | Self-hosted Convex |
 | Convex site proxy | `http://$PLUTUS_HOST:3211` | Convex HTTP actions |
 | Dashboard | `http://$PLUTUS_HOST:6791` | Convex dashboard |
-| OmniRoute (AI gateway) | `http://$PLUTUS_HOST:20128` | Shared platform instance (zeus) |
+| OmniRoute (AI gateway) | `http://192.168.1.46:20129/v1` | Shared platform instance, reached through its SSO proxy |
 
 All services are containerized (Docker); see `docker-compose.yml`.
 
@@ -101,15 +101,19 @@ and installs dependencies.
 ### AI keys
 
 The pipeline uses OmniRoute for scripting and image generation. PLUTUS uses the
-shared platform instance (`zeus`) on port `20128` — it is **not** part of the
-compose stack. Configure via environment variables (set on the backend with
-`npx convex env set`, so they land in the running backend's environment):
+shared platform instance on `192.168.1.46` — it is **not** part of the compose
+stack. Reach it on `20129`, the identity-aware proxy in front of the gateway
+(`20128` is published on that host's loopback and docker0 only, so it is not
+reachable from here), and set the values on the backend with
+`npx convex env set`, so they land in the running backend's environment:
 
 ```bash
-# OmniRoute gateway URL (LAN address — the backend container must reach it)
-npx convex env set OMNIROUTE_BASE_URL http://$(node scripts/lan-ip.mjs):20128/v1
+# The proxy's LAN address — the backend container must reach it. There is no
+# default that works: the code falls back to localhost:20128, which inside the
+# Convex container is the container itself.
+npx convex env set OMNIROUTE_BASE_URL http://192.168.1.46:20129/v1
 
-# API key for the shared instance (required — zeus authenticates requests)
+# API key for the shared instance (required — the gateway authenticates requests)
 npx convex env set OMNIROUTE_API_KEY 'sk-...'
 
 # Model for scripting (default: "auto" — OmniRoute picks best provider)
