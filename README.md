@@ -9,6 +9,7 @@
 [![Release](https://github.com/innotelinc/plutus/actions/workflows/release.yml/badge.svg)](https://github.com/innotelinc/plutus/actions/workflows/release.yml)
 [![Pages](https://github.com/innotelinc/plutus/actions/workflows/pages.yml/badge.svg)](https://github.com/innotelinc/plutus/actions/workflows/pages.yml)
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/License-AGPL--3.0--or--later-blue.svg)](LICENSE)
+[![Theme: Unity](https://img.shields.io/badge/theme-Unity-6366f1)](https://github.com/innotelinc/innotel-platform-stack/blob/main/standards/unity/README.md)
 
 </div>
 
