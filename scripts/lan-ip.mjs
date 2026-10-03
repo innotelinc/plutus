@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 // ─── LAN IP autodetection ─────────────────────────────────────────────────────
 //
-// Detects this host's primary LAN IPv4 address (e.g. 192.168.1.46) and prints
+// Detects this host's primary LAN IPv4 address (e.g. 192.168.1.74) and prints
 // it, so scripts, compose files, and CI never need a hardcoded IP again.
 //
-//   node scripts/lan-ip.mjs            -> 192.168.1.46
-//   node scripts/lan-ip.mjs --url      -> http://192.168.1.46
-//   node scripts/lan-ip.mjs --url 3000 -> http://192.168.1.46:3000
+//   node scripts/lan-ip.mjs            -> 192.168.1.74
+//   node scripts/lan-ip.mjs --url      -> http://192.168.1.74
+//   node scripts/lan-ip.mjs --url 3000 -> http://192.168.1.74:3000
 //
 // Resolution order:
 //   1. PLUTUS_HOST env var (explicit override — wins over everything)

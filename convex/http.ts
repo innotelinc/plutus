@@ -14,12 +14,12 @@
 // the Web Crypto API (crypto.subtle) rather than node:crypto.
 //
 // Env (set via `npx convex env set`):
-//   AUTHENTIK_ISSUER       e.g. http://192.168.1.46:9000   (default http://127.0.0.1:9000)
+//   AUTHENTIK_ISSUER       e.g. http://192.168.1.71:9000   (default http://127.0.0.1:9000)
 //   AUTHENTIK_APP_SLUG     e.g. plutus                      (default plutus)
 //   AUTHENTIK_CLIENT_ID / AUTHENTIK_CLIENT_SECRET  (written by scripts/provision-authentik.py)
 //   AUTHENTIK_ADMIN_GROUP  default plutus-admins
 //   SESSION_SECRET         HMAC key for the session cookie (required)
-//   PUBLIC_URL             e.g. http://192.168.1.46:3000    (default http://127.0.0.1:3000)
+//   PUBLIC_URL             e.g. http://192.168.1.74:3000    (default http://127.0.0.1:3000)
 
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";

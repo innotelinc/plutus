@@ -102,7 +102,7 @@ and installs dependencies.
 ### AI keys
 
 The pipeline uses OmniRoute for scripting and image generation. PLUTUS uses the
-shared platform instance on `192.168.1.46` — it is **not** part of the compose
+shared platform instance on `192.168.1.71` — it is **not** part of the compose
 stack. Reach it on `20128`, the identity-aware proxy in front of the gateway
 (`20128` is published on that host's loopback and docker0 only, so it is not
 reachable from here), and set the values on the backend with

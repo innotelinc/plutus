@@ -7,8 +7,8 @@
 //   CHROME_PATH  chrome-headless-shell binary (required)
 //   AUTH_USER    Authentik username (required)
 //   AUTH_PASS    Authentik password (required)
-//   AUTH_APP     app origin (default http://192.168.1.46:3000)
-//   AUTH_BASE    Authentik origin (default http://192.168.1.46:9000)
+//   AUTH_APP     app origin (default http://192.168.1.74:3000)
+//   AUTH_BASE    Authentik origin (default http://192.168.1.71:9000)
 //
 // Exits non-zero when the check fails.
 
@@ -26,8 +26,8 @@ if (!USER || !PASS) {
   console.error("[auth] AUTH_USER / AUTH_PASS not set");
   process.exit(1);
 }
-const APP = (process.env.AUTH_APP || "http://192.168.1.46:3000").replace(/\/+$/, "");
-const BASE = (process.env.AUTH_BASE || "http://192.168.1.46:9000").replace(/\/+$/, "");
+const APP = (process.env.AUTH_APP || "http://192.168.1.74:3000").replace(/\/+$/, "");
+const BASE = (process.env.AUTH_BASE || "http://192.168.1.71:9000").replace(/\/+$/, "");
 
 async function pickPort(start) {
   for (let port = start; port < start + 10; port++) {
