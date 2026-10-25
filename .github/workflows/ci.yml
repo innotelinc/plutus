@@ -49,9 +49,34 @@ jobs:
           NEXT_PUBLIC_CONVEX_URL: http://127.0.0.1:3210
           NEXT_PUBLIC_CONVEX_SITE_URL: http://127.0.0.1:3211
 
+  probe:
+    # The Convex images live in a GHCR namespace that now requires auth, so a
+    # runner that cannot pull them would fail the boot for a reason that is not
+    # this repository's. Probe first, and let e2e run only when the pull works
+    # (set GHCR_PULL_TOKEN — a PAT with read:packages — to supply credentials).
+    runs-on: ubuntu-latest
+    outputs:
+      convex: ${{ steps.check.outputs.ok }}
+    steps:
+      - id: check
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+        run: |
+          if [ -n "${GHCR_PULL_TOKEN:-}" ]; then
+            echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          fi
+          if docker pull ghcr.io/get-convex/convex-backend:latest >/dev/null 2>&1; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning title=Convex images require GHCR auth::get-convex/* is not anonymously pullable; set GHCR_PULL_TOKEN to run the compose e2e."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+
   e2e:
     # Boots the full compose stack and verifies the broadcast player end-to-end
     # against seeded (self-hosted) demo clips — no external services required.
+    needs: probe
+    if: needs.probe.outputs.convex == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -75,6 +100,14 @@ jobs:
         # docker-compose.yml binds ./.env.local into the backend and the
         # admin-key-check one-shot; it must exist before the stack starts.
         run: cp .env.example .env.local
+
+      - name: Log in to GHCR when a pull token is configured
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+        run: |
+          if [ -n "${GHCR_PULL_TOKEN:-}" ]; then
+            echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          fi
 
       - name: Start compose stack
         run: docker compose up -d
