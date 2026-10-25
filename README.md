@@ -13,6 +13,17 @@
 
 </div>
 
+> **PLUTUS** is a self-hosted AI shopping channel: a viewer submits a product URL
+> and an AI host presents it in a generated video clip. OmniRoute handles the
+> scriptwriting and keyframe generation, ffmpeg interpolates between the
+> keyframes, and the segment airs on the channel's real-time schedule — no
+> external video APIs, no vendor lock-in, no cloud account.
+>
+> Part of the [Innotel Platform Stack](https://github.com/innotelinc/innotel-platform-stack):
+> Cerulean owns identity, DNS and TLS, NPM Edge carries the public route, and
+> every model call leaves through OmniRoute. Landing page:
+> [innotelinc.github.io/plutus](https://innotelinc.github.io/plutus/).
+
 ---
 
 ## Why PLUTUS
@@ -22,16 +33,6 @@
 | AI video APIs are expensive and closed | Fully open-source: T2I keyframes + ffmpeg minterpolate, no external video API |
 | Shopping channels require production studios | AI-generated video clips from a product URL alone |
 | Each service has its own AI integration | OmniRoute fronts 350+ providers for scripting, image gen, and more |
-
-> **About PLUTUS** — a self-hosted AI shopping channel where viewers submit product
-> URLs and an AI host presents them in generated video clips. OmniRoute handles
-> scriptwriting and keyframe generation; ffmpeg animates between keyframes. No
-> external video APIs, no vendor lock-in, no cloud account required.
->
-> **Landing page:** [innotelinc.github.io/plutus](https://innotelinc.github.io/plutus)
-> — the static project landing is published through GitHub Pages.
-
----
 
 ## What it is
 
@@ -53,7 +54,7 @@ network reach the stack; `127.0.0.1` works for localhost-only access.
 | Convex backend | `http://$PLUTUS_HOST:3210` | Self-hosted Convex |
 | Convex site proxy | `http://$PLUTUS_HOST:3211` | Convex HTTP actions |
 | Dashboard | `http://$PLUTUS_HOST:6791` | Convex dashboard |
-| OmniRoute (AI gateway) | `http://192.168.1.71:20128/v1` | Shared platform instance, reached through its SSO proxy |
+| OmniRoute (AI gateway) | `http://<gateway-host>:20128/v1` | Shared platform instance, reached through its SSO proxy |
 
 All services are containerized (Docker); see `docker-compose.yml`.
 
@@ -102,17 +103,18 @@ and installs dependencies.
 ### AI keys
 
 The pipeline uses OmniRoute for scripting and image generation. PLUTUS uses the
-shared platform instance on `192.168.1.71` — it is **not** part of the compose
-stack. Reach it on `20128`, the identity-aware proxy in front of the gateway
-(`20128` is published on that host's loopback and docker0 only, so it is not
-reachable from here), and set the values on the backend with
-`npx convex env set`, so they land in the running backend's environment:
+platform's shared instance — it is **not** part of this compose stack. Reach it
+on `20128`, the identity-aware proxy in front of the gateway (`20128` is
+published on that host's loopback and docker0 only, so it is not reachable from
+here), and set the values on the backend with `npx convex env set`, so they land
+in the running backend's environment. Substitute your own gateway host for
+`<gateway-host>`:
 
 ```bash
 # The proxy's LAN address — the backend container must reach it. There is no
 # default that works: the code falls back to localhost:20128, which inside the
 # Convex container is the container itself.
-npx convex env set OMNIROUTE_BASE_URL http://192.168.1.71:20128/v1
+npx convex env set OMNIROUTE_BASE_URL http://<gateway-host>:20128/v1
 
 # API key for the shared instance (required — the gateway authenticates requests)
 npx convex env set OMNIROUTE_API_KEY 'sk-...'
