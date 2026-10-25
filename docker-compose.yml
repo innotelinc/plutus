@@ -88,6 +88,10 @@ services:
       start_period: 10s
 
   dashboard:
+    # Opt-in: the upstream dashboard image is no longer anonymously pullable
+    # from GHCR, so the default stack must not depend on it. Bring it up with
+    # `docker compose --profile dashboard up -d` when your account can pull it.
+    profiles: ["dashboard"]
     image: ghcr.io/get-convex/convex-dashboard:latest
     stop_grace_period: 10s
     stop_signal: SIGINT

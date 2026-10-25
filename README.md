@@ -53,7 +53,7 @@ network reach the stack; `127.0.0.1` works for localhost-only access.
 | Web UI | `http://$PLUTUS_HOST:3000` | Next.js static export (Nginx) |
 | Convex backend | `http://$PLUTUS_HOST:3210` | Self-hosted Convex |
 | Convex site proxy | `http://$PLUTUS_HOST:3211` | Convex HTTP actions |
-| Dashboard | `http://$PLUTUS_HOST:6791` | Convex dashboard |
+| Dashboard | `http://$PLUTUS_HOST:6791` | Convex dashboard, opt-in: `docker compose --profile dashboard up -d` (its upstream image is not anonymously pullable) |
 | OmniRoute (AI gateway) | `http://<gateway-host>:20128/v1` | Shared platform instance, reached through its SSO proxy |
 
 All services are containerized (Docker); see `docker-compose.yml`.
